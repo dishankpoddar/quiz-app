@@ -1,0 +1,13 @@
+{% extends "dashboard/base.html" %}
+{% block content %}
+<div class="content-section">
+  <legend class="border-bottom mb-4">Sign up for a free account</legend>
+  <p class="">Select below the type of account you want to create</p>
+  <a href="{% url 'student-registration' %}" class="btn btn-student btn-lg" role="button">I'm a student</a>
+  <a href="{% url 'teacher-registration' %}" class="btn btn-teacher btn-lg" role="button">I'm a teacher</a>
+  <br><br>
+    <div class="border-top pt-3">
+        <small class="text-muted">Already have an account? <a href="{% url 'login' %}" class="ml-2">Sign In</a></small>
+    </div>
+   </div>
+{% endblock content %}
