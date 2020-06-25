@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.urls import reverse
-
+from django import forms
 
 
 class User(AbstractUser):
@@ -10,8 +10,8 @@ class User(AbstractUser):
 
 class Quiz(models.Model):
     title = models.CharField(max_length = 100)
-    content = models.TextField()
-    author = models.ForeignKey(User, on_delete=models.CASCADE)
+    description = models.TextField()
+    author = models.ForeignKey(User, on_delete=models.CASCADE,related_name='quizzes')
 
     def __str__(self):
         return self.title
@@ -37,3 +37,18 @@ class AssignedQuiz(models.Model):
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='assigned_quizzes')
     score = models.FloatField()
     date = models.DateTimeField(auto_now_add=True)
+
+class Question(models.Model):
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='questions')
+    text = models.CharField('Question', max_length=255)
+
+    def __str__(self):
+        return self.text
+
+class Answer(models.Model):
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='answers')
+    text = models.CharField('Answer', max_length=255)
+    is_correct = models.BooleanField('Correct answer', default=False)
+
+    def __str__(self):
+        return self.text
