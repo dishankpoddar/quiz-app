@@ -4,7 +4,7 @@ from django.db import transaction
 from django.forms.utils import ValidationError
 from django.forms import inlineformset_factory
 
-from .models import (Student,Teacher,User,Question,Answer)
+from .models import (Student,Teacher,User,Question,Answer,Quiz)
 
 
 class TeacherSignUpForm(UserCreationForm):
@@ -37,6 +37,7 @@ class QuestionForm(forms.ModelForm):
     class Meta:
         model = Question
         fields = ('text', )
+
 
 
 class BaseAnswerInlineFormSet(forms.BaseInlineFormSet):

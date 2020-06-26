@@ -9,7 +9,7 @@
   </nav>
   <h2 class="mb-3">Quizzes</h2>
   <a href="{% url 'teacher-dashboard' %}" class="btn btn-primary mb-3" role="button">Dashboard</a>
-  <a href="{% url 'quiz-add' %}" class="btn btn-primary mb-3" role="button">Add quiz</a>
+  <a href="{% url 'quiz-add' %}" class="btn btn-success mb-3" role="button">Add quiz</a>
   <a href="{% url 'question-view' %}" class="btn btn-primary mb-3" role="button">View questions</a>
   <div class="table-responsive">
     <table class="table mb-0">
@@ -17,6 +17,7 @@
         <tr>
           <th>Quiz</th>
           <th>Description</th>
+          <th>Author</th>
           <th>Questions</th>
           <th>Assigned</th>
           <th></th>
@@ -29,22 +30,23 @@
           <tr>
             <td class="align-middle"><a href="{% url 'quiz-edit' quiz.pk %}">{{ quiz.title }}</a></td>
             <td class="align-middle overflowing">{{ quiz.description }}</td>
+            <td class="align-middle overflowing">{{ quiz.author }}</td>
             <td class="align-middle">{{ quiz.questions_count }}</td>
             <td class="align-middle">{{ quiz.assigned_count }}</td>
-            <td class="text-right">
-              <a href="#" class="btn btn-primary">View results</a>
+            <td class="align-middle">
+              <a href="#" class="btn btn-info">View results</a>
             </td>
             {% if quiz.author == user %}
-            <td class="text-right">
-              <a href="{% url 'quiz-edit' quiz.pk %}" class="btn btn-primary">Edit Quiz</a>
+            <td class="align-middle">
+              <a href="{% url 'quiz-edit' quiz.pk %}" class="btn btn-warning">Edit Quiz</a>
             </td>
-            <td class="text-right">
+            <td class="align-middle">
               <a href="#" class="btn btn-danger">Delete Quiz</a>
             </td>
             {% else %}
-            <td class="text-right">
+            <td class="align-middle">
             </td>
-            <td class="text-right">
+            <td class="align-middle">
             </td>
             {% endif %}
           </tr>

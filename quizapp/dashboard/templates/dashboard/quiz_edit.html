@@ -10,51 +10,62 @@
       </ol>
     </nav>
     <h2 class="mb-3">
-      <a href="#" class="btn btn-primary float-right">View results</a>
+      <a href="#" class="btn btn-info float-right">View results</a>
     </h2>
     <div class="row mb-3">
       <div class="col-md-6 col-sm-8 col-12">
         <form method="post" novalidate>
           {% csrf_token %}
           {{ form|crispy }}
+          {% if quiz.author == user %}
           <button type="submit" class="btn btn-success">Save changes</button>
           <a href="{% url 'teacher-dashboard' %}" class="btn btn-outline-secondary" role="button">Nevermind</a>
-          <a href="#" class="btn btn-danger float-right">Delete</a>
+          <a href="#" class="btn btn-danger float-right">Delete Quiz</a>
+          {% endif %}
         </form>
       </div>
     </div>
-    <div class="card">
-      <div class="card-header">
-        <div class="row">
-          <div class="col-10">
-            <strong>Questions</strong>
-          </div>
-          <div class="col-2">
-            <strong>Answers</strong>
-          </div>
-        </div>
-      </div>
-      <div class="list-group list-group-flush list-group-formset">
-        {% for question in questions %}
-          <div class="list-group-item">
-            <div class="row">
-              <div class="col-10">
-                <a href="#">{{ question.text }}</a>
-              </div>
-              <div class="col-2">
-                {{ question.answers_count }}
-              </div>
-            </div>
-          </div>
-        {% empty %}
-          <div class="list-group-item text-center">
-            <p class="text-muted font-italic mb-0">You haven't created any questions yet. Go ahead and <a href="#">add the first question</a>.</p>
-          </div>
-        {% endfor %}
-      </div>
-      <div class="card-footer">
-        <a href="#" class="btn btn-primary btn-sm">Add question</a>
-      </div>
+    <div class="table-responsive">
+      <table class="table mb-0">
+        <thead>
+          <tr>
+            <th>Question</th>
+            <th>Answers</th>
+            <th></th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for q in questions %}
+          <tr>
+            <td class="align-middle"><a href="{% url 'question-edit' q.question.pk %}">{{ q.question.text }}</a></td>
+            <td class="align-middle">{{ q.answer_count }}</td>
+            {% if q.question.author == user %}
+            <td class="align-middle">
+              <a href="{% url 'question-edit' q.question.pk %}" class="btn btn-warning">Edit Question</a>
+            </td>
+            <td class="align-middle">
+              <a href="#" class="btn btn-danger">Remove Question</a>
+            </td>
+            {% else %}
+            <td class="align-middle">
+            </td>
+            <td class="align-middle">
+            </td>
+            {% endif %}
+          </tr>
+          {% empty %}
+            <tr>
+              <td class="bg-light text-center font-italic" colspan="5">There are no questions yet. Go ahead and <a href="{% url 'question-add' %}">create the first question</a>.</td>
+            </tr>
+          {% endfor %}
+          {% if quiz.author == user %}
+          <tr>
+            <td class="bg-light text-center" colspan="5"><a href="#" class="btn btn-success btn-circle btn-sm">+</a></td>
+          </tr>
+          {% endif %}
+        </tbody>
+      </table>
     </div>
 </div>
 {% endblock %}

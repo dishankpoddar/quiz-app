@@ -13,53 +13,49 @@
       {% csrf_token %}
       {{ formset.management_form }}
       {{ form|crispy }}
-      <div class="card mb-3{% if formset.errors %} border-danger{% endif %}">
-        <div class="card-header">
-          <div class="row">
-            <div class="col-8">
-              <strong>Answers</strong>
-            </div>
-            <div class="col-2">
-              <strong>Correct?</strong>
-            </div>
-            {% if question.author == user %}
-            <div class="col-2">
-              <strong>Delete?</strong>
-            </div>
-            {% endif %}
-          </div>
-        </div>
-        {% for error in formset.non_form_errors %}
-          <div class="card-body bg-danger border-danger text-white py-2">{{ error }}</div>
-        {% endfor %}
-        <div class="list-group list-group-flush list-group-formset">
-          {% for form in formset %}
-            <div class="list-group-item">
-              <div class="row">
-                <div class="col-8">
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead>
+            <tr>
+              <th>Answers</th>
+              <th>Correct?</th>
+              {% if question.author == user %}
+              <th>Delete?</th>
+              {% endif %}
+            </tr>
+          </thead>
+          {% for error in formset.non_form_errors %}
+            <div class="card-body bg-danger border-danger text-white py-2">{{ error }}</div>
+          {% endfor %}
+          <tbody>
+            {% for form in formset %}
+              <tr>
+                <td class="align-middle">
                   {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
                   {{ form.text|as_crispy_field }}
                   {% if form.instance.pk and form.text.value != form.instance.text %}<p class="mb-0 mt-1"><small class="text-muted font-italic"><strong>Old answer:</strong> {{ form.instance.text }}</small></p>{% endif %}
-                </div>
-                <div class="col-2">
-                  {{ form.is_correct }}
-                </div>
+                </td>
+                <td class="align-middle">{{ form.is_correct }}</td>
                 {% if question.author == user %}
-                <div class="col-2">
+                <td class="align-middle">
                   {% if form.instance.pk %}
                     {{ form.DELETE }}
                   {% endif %}
-                </div>
+                </td>
                 {% endif %}
-              </div>
-            </div>
-          {% endfor %}
-        </div>
+              </tr>
+            {% empty %}
+              <tr>
+                <td class="bg-light text-center font-italic" colspan="5">There are no questions yet. Go ahead and <a href="{% url 'question-add' %}">create the first question</a>.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
       </div>
       {% if question.author == user %}
       <button type="submit" class="btn btn-success">Save changes</button>
       <a href="{% url 'teacher-dashboard' %}" class="btn btn-outline-secondary" role="button">Nevermind</a>
-      <a href="#" class="btn btn-danger float-right">Delete</a>
+      <a href="#" class="btn btn-danger float-right">Delete Question</a>
       {% endif %}
     </form>
 </div>

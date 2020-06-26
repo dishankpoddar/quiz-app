@@ -76,3 +76,7 @@ body {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+.btn-circle{
+  padding: 5px 10px;
+  border-radius: 50%;
+}

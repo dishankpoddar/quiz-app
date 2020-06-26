@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.views.generic import View,CreateView, DeleteView, DetailView, ListView,UpdateView,FormView
 from django.db import transaction
-from django.db.models import Avg, Count
+from django.db.models import Avg, Count, F
 from django.urls import reverse, reverse_lazy
 
 
@@ -97,13 +97,11 @@ class UpdateQuizView(UpdateView):
     fields = ('title', 'description', )
     context_object_name = 'quiz'
     template_name = 'dashboard/quiz_edit.html'
-
+    
     def get_context_data(self, **kwargs):
-        kwargs['questions'] = self.get_object().selected_question.annotate(answers_count=Count('question'))
+        kwargs['questions'] = self.get_object().selected_question.annotate(answer_count = Count(F('question__answers')))
         return super().get_context_data(**kwargs)
 
-    def get_queryset(self):
-        return self.request.user.quizzes.all()
 
     def get_success_url(self):
         return reverse('quiz-edit', kwargs={'pk': self.object.pk})
