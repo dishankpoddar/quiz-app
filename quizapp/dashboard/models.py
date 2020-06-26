@@ -16,9 +16,6 @@ class Quiz(models.Model):
     def __str__(self):
         return self.title
 
-    def get_absolute_url(self):
-        return reverse('quiz-detail',kwargs={'pk': self.pk})
-
 class Student(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
     quizzes = models.ManyToManyField(Quiz, through='AssignedQuiz')
@@ -39,16 +36,20 @@ class AssignedQuiz(models.Model):
     date = models.DateTimeField(auto_now_add=True)
 
 class Question(models.Model):
-    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='questions')
     text = models.CharField('Question', max_length=255)
+    author = models.ForeignKey(User, on_delete=models.CASCADE,related_name='questions')
 
     def __str__(self):
         return self.text
 
 class Answer(models.Model):
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='answers')
-    text = models.CharField('Answer', max_length=255)
+    text = models.CharField('', max_length=255)
     is_correct = models.BooleanField('Correct answer', default=False)
 
     def __str__(self):
         return self.text
+
+class SelectedQuestion(models.Model):
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='selected_question')
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='selected_question')

@@ -70,3 +70,9 @@ body {
     background-color: #66598B;
     border-color: #66598B;
   }
+  .overflowing {
+    max-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}

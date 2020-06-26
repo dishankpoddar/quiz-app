@@ -1,0 +1,54 @@
+{% extends "dashboard/base.html" %}
+{% block content %}
+<div class="content-section">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'teacher-dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Questions</li>
+    </ol>
+  </nav>
+  <h2 class="mb-3">Questions</h2>
+  <a href="{% url 'teacher-dashboard' %}" class="btn btn-primary mb-3" role="button">Dashboard</a>
+  <a href="{% url 'question-add' %}" class="btn btn-primary mb-3" role="button">Create question</a>
+  <a href="{% url 'quiz-view' %}" class="btn btn-primary mb-3" role="button">View quizzes</a>
+  <div class="table-responsive">
+    <table class="table mb-0">
+      <thead>
+        <tr>
+          <th>Question</th>
+          <th>Answers</th>
+          <th>Quizzes</th>
+          <th></th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for question in questions %}
+          <tr>
+            <td class="align-middle"><a href="{% url 'question-edit' question.pk %}">{{ question.text }}</a></td>
+            <td class="align-middle">{{ question.answer_count }}</td>
+            <td class="align-middle">{{ question.selected_count }}</td>
+            {% if question.author == user %}
+            <td class="text-right">
+              <a href="{% url 'question-edit' question.pk %}" class="btn btn-primary">Edit Question</a>
+            </td>
+            <td class="text-right">
+              <a href="#" class="btn btn-danger">Delete Question</a>
+            </td>
+            {% else %}
+            <td class="text-right">
+            </td>
+            <td class="text-right">
+            </td>
+            {% endif %}
+          </tr>
+        {% empty %}
+          <tr>
+            <td class="bg-light text-center font-italic" colspan="5">There are no questions yet. Go ahead and <a href="{% url 'question-add' %}">create the first question</a>.</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock content %}
