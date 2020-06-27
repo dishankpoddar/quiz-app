@@ -2,12 +2,12 @@ from django.shortcuts import render,HttpResponse, redirect,get_object_or_404
 from django.conf import settings 
 from django.contrib import messages
 from .forms import TeacherSignUpForm,StudentSignUpForm,BaseAnswerInlineFormSet,AnswerFormSet,QuestionForm
-from .models import Quiz,Question,Answer
+from .models import Quiz,Question,Answer,SelectedQuestion
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
-from django.views.generic import View,CreateView, DeleteView, DetailView, ListView,UpdateView,FormView
+from django.views.generic import View,TemplateView,CreateView, DeleteView, DetailView, ListView,UpdateView,FormView
 from django.db import transaction
-from django.db.models import Avg, Count, F
+from django.db.models import Avg, Count, F, Aggregate
 from django.urls import reverse, reverse_lazy
 
 
@@ -53,17 +53,18 @@ def studentRegistration(request):
     return render(request,'dashboard/register.html',{'form':form,'is_student':True})
 
 @method_decorator(login_required, name="dispatch")
-class TeacherDashboard(ListView):
-    model = Quiz
-    ordering = ('name', )
-    context_object_name = 'quizzes'
+class TeacherDashboard(TemplateView):
     template_name = 'dashboard/teacher_dashboard.html'
 
-    def get_queryset(self):
-        queryset = self.request.user.quizzes \
+    def get_context_data(self, **kwargs):
+        context = super(TeacherDashboard, self).get_context_data(**kwargs)
+        context['quizzes'] = self.request.user.quizzes.all() \
             .annotate(questions_count=Count('selected_question', distinct=True)) \
             .annotate(assigned_count=Count('assigned_quizzes', distinct=True))
-        return queryset
+        context['questions'] = self.request.user.questions.all() \
+            .annotate(selected_count=Count('selected_question', distinct=True)) \
+            .annotate(answer_count=Count('answers', distinct=True))
+        return context
 
 @method_decorator(login_required, name="dispatch")
 class ListQuizView(ListView):
@@ -105,6 +106,70 @@ class UpdateQuizView(UpdateView):
 
     def get_success_url(self):
         return reverse('quiz-edit', kwargs={'pk': self.object.pk})
+
+
+@method_decorator(login_required, name='dispatch')
+class DeleteQuizView(DeleteView):
+    model = Quiz
+    context_object_name = 'quiz'
+    template_name = 'dashboard/quiz_delete_confirm.html'
+    success_url = reverse_lazy('teacher-dashboard')
+
+    def delete(self, request, *args, **kwargs):
+        quiz = self.get_object()
+        messages.success(request, 'The quiz "%s" was deleted with success!' % quiz.title)
+        return super().delete(request, *args, **kwargs)
+
+    def get_queryset(self):
+        return self.request.user.quizzes.all()
+
+@login_required
+def remove_question(request,pk=None,select_pk=None):
+    quiz = get_object_or_404(Quiz, pk=pk ,author=request.user)
+    selected_question = SelectedQuestion.objects.get(pk=select_pk)
+    question = selected_question.question
+    selected_question.delete()
+    messages.success(request, 'The question "%s" was removed from "%s"!' % (question.text , quiz.title) )
+    return redirect('quiz-edit',pk)
+
+
+@method_decorator(login_required, name='dispatch')
+class SelectQuestionView(CreateView):
+    model = SelectedQuestion
+
+    def get(self,request,pk):
+        quiz = get_object_or_404(Quiz, pk=pk ,author=request.user)
+        some_questions = Question.objects.all()
+        selected_questions = quiz.selected_question.all()
+        questions = []
+        selected = []
+        for selected_question in selected_questions:
+            selected.append(selected_question.question)
+        for some_question in some_questions:
+            if(some_question not in selected):
+                arr = {"question":some_question,"answers":some_question.answers.all()}
+                questions.append(arr)
+        return render(request, 'dashboard/question_select.html', {
+            'questions': questions,
+            'quiz': quiz,
+        })
+    
+    def post(self,request,pk):
+        quiz = get_object_or_404(Quiz, pk=pk)
+        selected = []
+        for x in request.POST:
+            selected.append(x)
+        selected.pop(0)
+        for x in selected:
+            question = get_object_or_404(Question, pk=x )
+            select_question = SelectedQuestion(question=question,quiz=quiz)
+            select_question.save()
+        return redirect('quiz-edit',pk)
+
+
+    def get_queryset(self):
+        return self.request.user.quizzes.all()
+
 
 @method_decorator(login_required, name="dispatch")
 class ListQuestionView(ListView):
@@ -166,3 +231,18 @@ class UpdateQuestionView(UpdateView):
 
     def get_success_url(self):
         return reverse('question-edit', kwargs={'pk': self.object.pk})
+
+@method_decorator(login_required, name='dispatch')
+class DeleteQuestionView(DeleteView):
+    model = Question
+    context_object_name = 'question'
+    template_name = 'dashboard/question_delete_confirm.html'
+    success_url = reverse_lazy('teacher-dashboard')
+
+    def delete(self, request, *args, **kwargs):
+        question = self.get_object()
+        messages.success(request, 'The question "%s" was deleted with success!' % question.text)
+        return super().delete(request, *args, **kwargs)
+
+    def get_queryset(self):
+        return self.request.user.questions.all()

@@ -19,8 +19,8 @@
           {{ form|crispy }}
           {% if quiz.author == user %}
           <button type="submit" class="btn btn-success">Save changes</button>
-          <a href="{% url 'teacher-dashboard' %}" class="btn btn-outline-secondary" role="button">Nevermind</a>
-          <a href="#" class="btn btn-danger float-right">Delete Quiz</a>
+          <a href="javascript:history.back(-1)" class="btn btn-outline-secondary" role="button">Nevermind</a>
+          <a href="{% url 'quiz-delete' quiz.pk %}" class="btn btn-danger float-right">Delete Quiz</a>
           {% endif %}
         </form>
       </div>
@@ -30,6 +30,7 @@
         <thead>
           <tr>
             <th>Question</th>
+            <th>Author</th>
             <th>Answers</th>
             <th></th>
             <th></th>
@@ -39,29 +40,33 @@
           {% for q in questions %}
           <tr>
             <td class="align-middle"><a href="{% url 'question-edit' q.question.pk %}">{{ q.question.text }}</a></td>
+            <td class="align-middle">{{ q.question.author }}</td>
             <td class="align-middle">{{ q.answer_count }}</td>
             {% if q.question.author == user %}
             <td class="align-middle">
               <a href="{% url 'question-edit' q.question.pk %}" class="btn btn-warning">Edit Question</a>
             </td>
-            <td class="align-middle">
-              <a href="#" class="btn btn-danger">Remove Question</a>
-            </td>
             {% else %}
             <td class="align-middle">
             </td>
+            {% endif %}
+            {% if quiz.author == user %}
+            <td class="align-middle">
+              <a href="{% url 'question-remove' quiz.pk q.pk  %}" class="btn btn-danger">Remove Question</a>
+            </td>
+            {% else %}
             <td class="align-middle">
             </td>
             {% endif %}
           </tr>
           {% empty %}
             <tr>
-              <td class="bg-light text-center font-italic" colspan="5">There are no questions yet. Go ahead and <a href="{% url 'question-add' %}">create the first question</a>.</td>
+              <td class="bg-light text-center font-italic" colspan="5">There are no questions in this quiz yet. {% if quiz.author == user %}Go ahead and <a href="{% url 'quiz-select' quiz.pk %}">add the first question</a>.{% endif %}</td>
             </tr>
           {% endfor %}
           {% if quiz.author == user %}
           <tr>
-            <td class="bg-light text-center" colspan="5"><a href="#" class="btn btn-success btn-circle btn-sm">+</a></td>
+            <td class="bg-light text-center" colspan="5"><a href="{% url 'quiz-select' quiz.pk %}" class="btn btn-success btn-circle btn-sm">+</a></td>
           </tr>
           {% endif %}
         </tbody>

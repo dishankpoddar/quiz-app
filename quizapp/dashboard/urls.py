@@ -1,6 +1,8 @@
 from django.urls import path
 from . import views
-from .views import CreateQuizView,UpdateQuizView,ListQuizView,ListQuestionView,CreateQuestionView,UpdateQuestionView,TeacherDashboard
+from .views import (ListQuizView,CreateQuizView,UpdateQuizView,DeleteQuizView,SelectQuestionView,
+                    ListQuestionView,CreateQuestionView,UpdateQuestionView,DeleteQuestionView,
+                    TeacherDashboard)
 from django.contrib.auth import views as auth_views
 
 urlpatterns = [    
@@ -20,7 +22,11 @@ urlpatterns = [
     path('quiz/view/', ListQuizView.as_view(), name='quiz-view'),
     path('quiz/add/', CreateQuizView.as_view(), name='quiz-add'),
     path('quiz/<int:pk>/', UpdateQuizView.as_view(), name='quiz-edit'),
+    path('quiz/<int:pk>/delete', DeleteQuizView.as_view(), name='quiz-delete'),
+    path('quiz/<int:pk>/select', SelectQuestionView.as_view(), name='quiz-select'),
+    path('quiz/<int:pk>/remove-question/<int:select_pk>', views.remove_question, name='question-remove'),
     path('question/view/', ListQuestionView.as_view(), name='question-view'),
     path('question/add/', CreateQuestionView.as_view(), name='question-add'),
     path('question/<int:pk>/', UpdateQuestionView.as_view(), name='question-edit'),
+    path('question/<int:pk>/delete', DeleteQuestionView.as_view(), name='question-delete'),
 ]

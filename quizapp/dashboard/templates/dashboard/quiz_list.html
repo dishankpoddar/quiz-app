@@ -41,7 +41,7 @@
               <a href="{% url 'quiz-edit' quiz.pk %}" class="btn btn-warning">Edit Quiz</a>
             </td>
             <td class="align-middle">
-              <a href="#" class="btn btn-danger">Delete Quiz</a>
+              <a href="{% url 'quiz-delete' quiz.pk %}" class="btn btn-danger">Delete Quiz</a>
             </td>
             {% else %}
             <td class="align-middle">
@@ -52,7 +52,7 @@
           </tr>
         {% empty %}
           <tr>
-            <td class="bg-light text-center font-italic" colspan="5">You haven't created any quiz yet. Go ahead and <a href="{% url 'quiz-add' %}">add the first quiz</a>.</td>
+            <td class="bg-light text-center font-italic" colspan="5">Nobody has added any quizzes yet. Go ahead and <a href="{% url 'quiz-add' %}">add the first quiz</a>.</td>
           </tr>
         {% endfor %}
       </tbody>

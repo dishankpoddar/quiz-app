@@ -1,3 +1,4 @@
+
 {% extends "dashboard/base.html" %}
 {% load crispy_forms_tags %}
 {% block content %}
@@ -5,44 +6,49 @@
     <nav aria-label="breadcrumb">
       <ol class="breadcrumb">
         <li class="breadcrumb-item"><a href="{% url 'teacher-dashboard' %}">Dashboard</a></li>
-        <li class="breadcrumb-item"><a href="{% url 'question-view' %}">Questions</a></li>
-        <li class="breadcrumb-item active" aria-current="page">{{ question.text }}</li>
+        <li class="breadcrumb-item"><a href="{% url 'quiz-view' %}">Quizzes</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'quiz-edit' quiz.pk%}">{{ quiz.title }}</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Select Questions</li>
       </ol>
     </nav>
+    <h2 class="mb-3">{{quiz.title}}</h2>
     <form method="post" novalidate>
-      {% csrf_token %}
-      {{ formset.management_form }}
-      {{ form|crispy }}
+        {% csrf_token %}
       <div class="table-responsive">
         <table class="table mb-0">
           <thead>
             <tr>
+              <th>Question</th>
+              <th>Author</th>
               <th>Answers</th>
-              <th>Correct?</th>
-              {% if question.author == user %}
-              <th>Delete?</th>
-              {% endif %}
+              <th>Add</th>
             </tr>
           </thead>
           {% for error in formset.non_form_errors %}
             <div class="card-body bg-danger border-danger text-white py-2">{{ error }}</div>
           {% endfor %}
           <tbody>
-            {% for form in formset %}
+            {% for q in questions %}
               <tr>
                 <td class="align-middle">
-                  {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
-                  {{ form.text|as_crispy_field }}
-                  {% if form.instance.pk and form.text.value != form.instance.text %}<p class="mb-0 mt-1"><small class="text-muted font-italic"><strong>Old answer:</strong> {{ form.instance.text }}</small></p>{% endif %}
+                    <a href="{% url 'question-edit' q.question.pk%}">{{ q.question.text }}</a>
                 </td>
-                <td class="align-middle">{{ form.is_correct }}</td>
-                {% if question.author == user %}
                 <td class="align-middle">
-                  {% if form.instance.pk %}
-                    {{ form.DELETE }}
-                  {% endif %}
+                    {{ q.question.author }}
                 </td>
-                {% endif %}
+                <td class="align-middle">
+                    {% for a in q.answers%}
+                    {% if a.is_correct %}
+                        <strong class="text-success">{{a.text}}</strong>
+                    {% else %}
+                        <strong class="text-danger">{{a.text}}</strong>
+                    {% endif %}
+                    <br>
+                    {% endfor %}
+                </td>
+                <td class="align-middle">
+                  <input type="checkbox" name = "{{q.question.pk}}" value="{{q.question}}">
+                </td>
               </tr>
             {% empty %}
               <tr>
@@ -52,11 +58,8 @@
           </tbody>
         </table>
       </div>
-      {% if question.author == user %}
-      <button type="submit" class="btn btn-success">Save changes</button>
+      <button type="submit" class="btn btn-success">Add Question(s)</button>
       <a href="javascript:history.back(-1)" class="btn btn-outline-secondary" role="button">Nevermind</a>
-      <a href="{% url 'question-delete' question.pk %}" class="btn btn-danger float-right">Delete Question</a>
-      {% endif %}
     </form>
 </div>
 {% endblock %}
