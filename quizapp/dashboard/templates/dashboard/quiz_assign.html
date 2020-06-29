@@ -1,0 +1,52 @@
+
+{% extends "dashboard/base.html" %}
+{% load crispy_forms_tags %}
+{% block content %}
+<div class="content-section">
+    <nav aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'teacher-dashboard' %}">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'quiz-view' %}">Quizzes</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'quiz-edit' quiz.pk%}">{{ quiz.title }}</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Assign to students</li>
+      </ol>
+    </nav>
+    <h2 class="mb-3">{{quiz.title}}</h2>
+    <form method="post" novalidate>
+        {% csrf_token %}
+      <div class="table-responsive">
+        <table class="table mb-0">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Assign</th>
+            </tr>
+          </thead>
+          {% for error in formset.non_form_errors %}
+            <div class="card-body bg-danger border-danger text-white py-2">{{ error }}</div>
+          {% endfor %}
+          <tbody>
+            {% for student in students %}
+              <tr>
+                <td class="align-middle">
+                  {{ student }}
+                </td>
+                {% if student in selected %}
+                <td class="align-middle">
+                  <input type="checkbox" name = "{{student.pk}}" value="{{student}}" checked>
+                </td>
+                {% else %}
+                <td class="align-middle">
+                  <input type="checkbox" name = "{{student.pk}}" value="{{student}}">
+                </td>
+                {% endif %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <button type="submit" class="btn btn-success">Add Student(s)</button>
+      <a href="javascript:history.back(-1)" class="btn btn-outline-secondary" role="button">Nevermind</a>
+    </form>
+</div>
+{% endblock %}

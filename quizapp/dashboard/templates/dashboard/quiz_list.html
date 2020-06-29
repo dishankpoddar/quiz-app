@@ -36,7 +36,7 @@
             <td class="align-middle">
               <a href="#" class="btn btn-info">View results</a>
             </td>
-            {% if quiz.author == user %}
+            {% if quiz.author == user.teacher %}
             <td class="align-middle">
               <a href="{% url 'quiz-edit' quiz.pk %}" class="btn btn-warning">Edit Quiz</a>
             </td>
