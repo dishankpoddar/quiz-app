@@ -68,26 +68,25 @@ class Answer(models.Model):
         return self.text
 
 class SelectedQuestion(models.Model):
-    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='selected_question',related_query_name="question")
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='selected_question')
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='selected_question')
 
 class AssignedQuiz(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='assigned_quizzes')
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='assigned_quizzes')
+    score = models.FloatField(default=0)
     date = models.DateTimeField(auto_now_add=True)
-
-class StartedQuiz(models.Model):
-    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='started_quizzes')
-    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='started_quizzes')
-    score = models.FloatField()
-    date = models.DateTimeField(auto_now_add=True)
-
-class CompletedQuiz(models.Model):
-    student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='completed_quizzes')
-    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='completed_quizzes')
-    score = models.FloatField()
-    date = models.DateTimeField(auto_now_add=True)
+    ASSIGNED = 'AS'
+    STARTED = 'SD'
+    COMPLETED = 'CO'
+    STATUS_CHOICES = [
+        (ASSIGNED,'Assigned'),
+        (STARTED,'Started'),
+        (COMPLETED,'Assigned'),
+    ]
+    status = models.CharField(max_length=2,choices=STATUS_CHOICES,default=ASSIGNED,)
 
 class StudentAnswer(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='answered')
     answer = models.ForeignKey(Answer, on_delete=models.CASCADE, related_name='answered')
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='answered')

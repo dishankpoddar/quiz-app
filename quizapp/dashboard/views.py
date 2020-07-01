@@ -24,7 +24,7 @@ def dashboard(request):
         if request.user.role == User.TEACHER:
             return redirect('teacher-dashboard')
         elif request.user.role == User.STUDENT:
-            return redirect('index')
+            return redirect('student-dashboard')
         else:
             return redirect('index')
 
@@ -39,6 +39,20 @@ def registration(request):
     else:
         form = SignUpForm()
     return render(request,'dashboard/register.html',{'form':form,'is_student':False})
+
+@method_decorator(login_required, name="dispatch")
+class StudentDashboard(TemplateView):
+    template_name = 'dashboard/student_dashboard.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(StudentDashboard, self).get_context_data(**kwargs)
+        context['assigned_quizzes'] = self.request.user.student.assigned_quizzes.filter(status = AssignedQuiz.ASSIGNED) \
+            .annotate(questions_count=Count('quiz__selected_question', distinct=True))
+        context['started_quizzes'] = self.request.user.student.assigned_quizzes.filter(status = AssignedQuiz.STARTED) \
+            .annotate(questions_count=Count('quiz__selected_question', distinct=True))
+        context['completed_quizzes'] = self.request.user.student.assigned_quizzes.filter(status = AssignedQuiz.COMPLETED) \
+            .annotate(questions_count=Count('quiz__selected_question', distinct=True))
+        return context
 
 @method_decorator(login_required, name="dispatch")
 class TeacherDashboard(TemplateView):

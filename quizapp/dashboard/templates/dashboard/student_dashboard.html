@@ -1,0 +1,111 @@
+{% extends "dashboard/base.html" %}
+{% block content %}
+<div class="content-section">
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      <li class="breadcrumb-item active" aria-current="page">Dashboard</li>
+    </ol>
+  </nav>
+  <h2 class="mb-3">My Quizzes</h2> 
+  <ul class="nav nav-tabs mb-3">
+    <li class="nav-item">
+      <button class="nav-link tablinks active " id="defaultOpen" onclick="openBox(this, 'assigned')">Assigned</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link tablinks" onclick="openBox(this, 'started')">Started</button>
+    </li>
+    <li class="nav-item">
+      <button class="nav-link tablinks" onclick="openBox(this, 'completed')">Completed</button>
+    </li>
+  </ul>
+  <div class="table-responsive tabcontent tabdefault" id="assigned">
+    <table class="table mb-0">
+      <thead>
+        <tr>
+          <th>Quiz</th>
+          <th>Description</th>
+          <th>Author</th>
+          <th>Questions</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for assigned_quiz in assigned_quizzes %}
+          <tr>
+            <td class="align-middle">{{ assigned_quiz.quiz.title }}</td>
+            <td class="align-middle overflowing">{{ assigned_quiz.quiz.description }}</td>
+            <td class="align-middle">{{ assigned_quiz.quiz.author }}</td>
+            <td class="align-middle">{{ assigned_quiz.questions_count }}</td>
+            <td class="align-middle">
+              <a href="{% url 'quiz-edit' assigned_quiz.quiz.pk %}" class="btn btn-warning">Start Quiz</a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td class="bg-light text-center font-italic" colspan="5">You don't have any assigned quizzes yet. Ask your teachers for a new quiz now!</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="table-responsive tabcontent" id="started">
+    <table class="table mb-0">
+      <thead>
+        <tr>
+          <th>Quiz</th>
+          <th>Description</th>
+          <th>Author</th>
+          <th>Questions</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for started_quiz in started_quizzes %}
+          <tr>
+            <td class="align-middle">{{ started_quiz.quiz.title }}</td>
+            <td class="align-middle overflowing">{{ started_quiz.quiz.description }}</td>
+            <td class="align-middle">{{ started_quiz.quiz.author }}</td>
+            <td class="align-middle">{{ started_quiz.questions_count }}</td>
+            <td class="align-middle">
+              <a href="{% url 'quiz-edit' started_quiz.quiz.pk %}" class="btn btn-warning">Continue Quiz</a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td class="bg-light text-center font-italic" colspan="5">You don't have any active quizzes yet. Start a new quiz now!</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div class="table-responsive tabcontent" id="completed">
+    <table class="table mb-0">
+      <thead>
+        <tr>
+          <th>Quiz</th>
+          <th>Description</th>
+          <th>Author</th>
+          <th>Questions</th>
+          <th>Score</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for completed_quiz in completed_quizzes %}
+          <tr>
+            <td class="align-middle">{{ completed_quiz.quiz.title }}</td>
+            <td class="align-middle overflowing">{{ completed_quiz.quiz.description }}</td>
+            <td class="align-middle">{{ completed_quiz.quiz.author }}</td>
+            <td class="align-middle">{{ completed_quiz.questions_count }}</td>
+            <td class="align-middle">{{completed_quiz.score}}</td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td class="bg-light text-center font-italic" colspan="5">You haven't completed any quizzes yet. Complete pending quizzes and get your scores ASAP!</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <br>
+</div>
+{% endblock content %}
