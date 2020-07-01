@@ -6,6 +6,23 @@ from django.forms import inlineformset_factory
 
 from .models import (Student,Teacher,User,Question,Answer,Quiz)
 
+class SignUpForm(UserCreationForm):
+    CHOICES = [(User.TEACHER,'Teacher'),(User.STUDENT,'Student')]
+    role = forms.ChoiceField(label="Role",widget=forms.RadioSelect, choices=CHOICES)
+    class Meta(UserCreationForm.Meta):
+        model = User
+        fields = UserCreationForm.Meta.fields + ('role',)
+    
+    @transaction.atomic
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        if(self.data['role']==User.TEACHER):
+            Teacher.objects.create(user=user)
+        if(self.data['role']==User.STUDENT):
+            Student.objects.create(user=user)
+        
+        user.save()
+        return user
 
 class TeacherSignUpForm(UserCreationForm):
     class Meta(UserCreationForm.Meta):
@@ -14,21 +31,20 @@ class TeacherSignUpForm(UserCreationForm):
     @transaction.atomic
     def save(self, commit=True):
         user = super().save(commit=False)
-        user.is_teacher = True
+        user.role = User.TEACHER
         user.save()
         teacher = Teacher.objects.create(user=user)
         return user
 
 
 class StudentSignUpForm(UserCreationForm):
-
     class Meta(UserCreationForm.Meta):
         model = User
 
     @transaction.atomic
     def save(self):
         user = super().save(commit=False)
-        user.is_student = True
+        user.role = User.STUDENT
         user.save()
         student = Student.objects.create(user=user)
         return user

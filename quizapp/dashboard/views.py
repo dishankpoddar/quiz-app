@@ -1,8 +1,8 @@
 from django.shortcuts import render,HttpResponse, redirect,get_object_or_404
 from django.conf import settings 
 from django.contrib import messages
-from .forms import TeacherSignUpForm,StudentSignUpForm,BaseAnswerInlineFormSet,AnswerFormSet,QuestionForm
-from .models import Quiz,Question,Answer,SelectedQuestion,AssignedQuiz,Student
+from .forms import SignUpForm,TeacherSignUpForm,StudentSignUpForm,BaseAnswerInlineFormSet,AnswerFormSet,QuestionForm
+from .models import User,Quiz,Question,Answer,SelectedQuestion,AssignedQuiz,Student
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.views.generic import View,TemplateView,CreateView, DeleteView, DetailView, ListView,UpdateView,FormView
@@ -21,36 +21,24 @@ def register(request):
 @login_required
 def dashboard(request):
     if request.user.is_authenticated:
-        if request.user.is_teacher:
+        if request.user.role == User.TEACHER:
             return redirect('teacher-dashboard')
-        elif request.user.is_student:
+        elif request.user.role == User.STUDENT:
             return redirect('index')
         else:
             return redirect('index')
 
-def teacherRegistration(request):
+def registration(request):
     if(request.method == 'POST'):
-        form = TeacherSignUpForm(request.POST)
+        form = SignUpForm(request.POST)
         if(form.is_valid()):
             form.save()
             username = form.cleaned_data.get('username')
-            messages.success(request,f'Teacher Account created for {username}! You can now login')
+            messages.success(request,f'Account created for {username}! You can now login')
             return redirect('login')
     else:
-        form = TeacherSignUpForm()
+        form = SignUpForm()
     return render(request,'dashboard/register.html',{'form':form,'is_student':False})
-
-def studentRegistration(request):
-    if(request.method == 'POST'):
-        form = StudentSignUpForm(request.POST)
-        if(form.is_valid()):
-            form.save()
-            username = form.cleaned_data.get('username')
-            messages.success(request,f'Student Account created for {username}! You can now login')
-            return redirect('login')
-    else:
-        form = TeacherSignUpForm()
-    return render(request,'dashboard/register.html',{'form':form,'is_student':True})
 
 @method_decorator(login_required, name="dispatch")
 class TeacherDashboard(TemplateView):

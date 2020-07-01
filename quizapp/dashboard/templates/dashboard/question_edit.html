@@ -34,7 +34,6 @@
                 <td class="align-middle">
                   {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
                   {{ form.text|as_crispy_field }}
-                  {% if form.instance.pk and form.text.value != form.instance.text %}<p class="mb-0 mt-1"><small class="text-muted font-italic"><strong>Old answer:</strong> {{ form.instance.text }}</small></p>{% endif %}
                 </td>
                 {% if question.author == user.teacher %}
                 <td class="align-middle">{{ form.is_correct }}</td>

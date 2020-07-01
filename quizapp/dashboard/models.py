@@ -2,11 +2,23 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.urls import reverse
 from django import forms
-
+import uuid
 
 class User(AbstractUser):
-    is_student = models.BooleanField(default=False)
-    is_teacher = models.BooleanField(default=False)
+    id = models.UUIDField( 
+         primary_key = True, 
+         default = uuid.uuid4, 
+         editable = False)
+    ADMIN = 'AD'
+    TEACHER = 'TE'
+    STUDENT = 'ST'
+    UNDEFINED = 'UD'
+    ROLE_CHOICES = [
+        (ADMIN,'Admin'),
+        (TEACHER,'Teacher'),
+        (STUDENT, 'Student'),
+    ]
+    role = models.CharField(max_length=2,choices=ROLE_CHOICES,default=UNDEFINED,)
 
 class Student(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, primary_key=True)
@@ -21,6 +33,10 @@ class Teacher(models.Model):
         return self.user.username
 
 class Quiz(models.Model):
+    id = models.UUIDField( 
+         primary_key = True, 
+         default = uuid.uuid4, 
+         editable = False)
     title = models.CharField(max_length = 100)
     description = models.TextField()
     author = models.ForeignKey(Teacher, on_delete=models.CASCADE,related_name='quizzes')
@@ -29,6 +45,10 @@ class Quiz(models.Model):
         return self.title
         
 class Question(models.Model):
+    id = models.UUIDField( 
+         primary_key = True, 
+         default = uuid.uuid4, 
+         editable = False)
     text = models.CharField('Question', max_length=255)
     author = models.ForeignKey(Teacher, on_delete=models.CASCADE,related_name='questions')
 
@@ -36,6 +56,10 @@ class Question(models.Model):
         return self.text
 
 class Answer(models.Model):
+    id = models.UUIDField( 
+         primary_key = True, 
+         default = uuid.uuid4, 
+         editable = False)
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='answers')
     text = models.CharField('', max_length=255)
     is_correct = models.BooleanField('Correct answer', default=False)
@@ -44,7 +68,7 @@ class Answer(models.Model):
         return self.text
 
 class SelectedQuestion(models.Model):
-    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='selected_question')
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='selected_question',related_query_name="question")
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='selected_question')
 
 class AssignedQuiz(models.Model):
