@@ -189,6 +189,27 @@ class DeleteQuizView(DeleteView):
     def get_queryset(self):
         return self.request.user.teacher.quizzes.all()
 
+@method_decorator(login_required, name='dispatch')
+class ResultQuizView(DetailView):
+    model = Quiz
+    context_object_name = 'quiz'
+    template_name = 'dashboard/quiz_result.html'
+
+    def get_context_data(self, **kwargs):
+        quiz = self.get_object()
+        assigned_quizzes = quiz.assigned_quizzes.select_related('student__user').order_by('-date')
+        total_assigned_quizzes = assigned_quizzes.count()
+        quiz_score = quiz.assigned_quizzes.aggregate(average_score=Avg('score'))
+        extra_context = {
+            'assigned_quizzes': assigned_quizzes,
+            'total_assigned_quizzes': total_assigned_quizzes,
+            'quiz_score': quiz_score
+        }
+        kwargs.update(extra_context)
+        return super().get_context_data(**kwargs)
+
+    def get_queryset(self):
+        return self.request.user.teacher.quizzes.all()
 
 @method_decorator(login_required, name='dispatch')
 class AssignQuizView(CreateView):

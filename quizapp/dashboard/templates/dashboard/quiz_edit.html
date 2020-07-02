@@ -36,7 +36,7 @@
         {% if quiz.author == user.teacher %}
         <a href="{% url 'quiz-assign' quiz.pk %}" class="btn btn-primary float-right">Assign Quiz</a><br><br>
         {% endif %}
-        <a href="#" class="btn btn-info float-right">View results</a>
+        <a href="{% url 'quiz-result' quiz.pk %}" class="btn btn-info float-right">View results</a>
       </div>  
     </div>
     <div class="table-responsive">
