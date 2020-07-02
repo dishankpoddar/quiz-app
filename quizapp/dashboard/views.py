@@ -1,7 +1,7 @@
 from django.shortcuts import render,HttpResponse, redirect,get_object_or_404
 from django.conf import settings 
 from django.contrib import messages
-from .forms import SignUpForm,TeacherSignUpForm,StudentSignUpForm,BaseAnswerInlineFormSet,AnswerFormSet,QuestionForm
+from .forms import SignUpForm,TeacherSignUpForm,StudentSignUpForm,BaseAnswerInlineFormSet,AnswerFormSet,QuestionForm,TakeQuizForm
 from .models import User,Quiz,Question,Answer,SelectedQuestion,AssignedQuiz,Student
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
@@ -67,6 +67,70 @@ class TeacherDashboard(TemplateView):
             .annotate(selected_count=Count('selected_question', distinct=True)) \
             .annotate(answer_count=Count('answers', distinct=True))
         return context
+
+@method_decorator(login_required, name="dispatch")
+class TakeQuizView(CreateView):
+    template_name = 'dashboard/quiz_take.html'
+
+    def get_unanswered_questions(self,student,quiz):
+        answered_questions = student.answered \
+            .filter(quiz=quiz) \
+            .values_list('answer__question__pk', flat=True)
+        selected_questions = quiz.selected_question.all().order_by('?')
+        questions = []
+        for selected_question in selected_questions:
+            if(selected_question.question.pk not in answered_questions):
+                questions.append(selected_question.question)
+        return questions
+
+    def get_questions(self,student,quiz):
+        total_questions = quiz.selected_question.count()
+        unanswered_questions = self.get_unanswered_questions(student,quiz)
+        total_unanswered_questions = len(unanswered_questions)
+        progress = 100 - round(((total_unanswered_questions - 1) / total_questions) * 100)
+        question = unanswered_questions[0]
+        return question,progress
+    
+    def get(self,request,pk):
+        quiz = get_object_or_404(Quiz, pk=pk)
+        student = request.user.student
+        question,progress= self.get_questions(student,quiz)
+        assigned_quiz = get_object_or_404(AssignedQuiz, quiz=quiz,student=student)
+        assigned_quiz.status = AssignedQuiz.STARTED
+        assigned_quiz.save()
+        form = TakeQuizForm(question=question)
+        return render(request, 'dashboard/quiz_take.html', {
+        'quiz' : quiz,
+        'question': question,
+        'form': form,
+        'progress': progress
+        })
+    
+    def post(self,request,pk):
+        quiz = get_object_or_404(Quiz, pk=pk)
+        student = request.user.student
+        question,progress= self.get_questions(student,quiz)
+        form = TakeQuizForm(question=question, data=request.POST)
+        assigned_quiz = get_object_or_404(AssignedQuiz, quiz=quiz,student=student)
+        if form.is_valid():
+            with transaction.atomic():
+                student_answer = form.save(commit=False)
+                student_answer.student = student
+                student_answer.quiz = quiz
+                student_answer.save()
+                if len(self.get_unanswered_questions(student,quiz))>0:
+                    return redirect('quiz-take', pk)
+                else:
+                    correct_answers = student.answered.filter(quiz=quiz, answer__is_correct=True).count()
+                    score = round((correct_answers / (quiz.selected_question.count())) * 100.0, 2)
+                    assigned_quiz.score = score
+                    assigned_quiz.status = AssignedQuiz.COMPLETED
+                    assigned_quiz.save()
+                    if score < 50.0:
+                        messages.warning(request, 'Better luck next time! Your score for the quiz %s was %s.' % (quiz.title, score))
+                    else:
+                        messages.success(request, 'Congratulations! You completed the quiz %s with success! You scored %s points.' % (quiz.title, score))
+                    return redirect('student-dashboard')
 
 @method_decorator(login_required, name="dispatch")
 class ListQuizView(ListView):

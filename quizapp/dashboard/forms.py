@@ -4,7 +4,7 @@ from django.db import transaction
 from django.forms.utils import ValidationError
 from django.forms import inlineformset_factory
 
-from .models import (Student,Teacher,User,Question,Answer,Quiz)
+from .models import (Student,Teacher,User,Question,Answer,Quiz,StudentAnswer)
 
 class SignUpForm(UserCreationForm):
     CHOICES = [(User.TEACHER,'Teacher'),(User.STUDENT,'Student')]
@@ -79,3 +79,19 @@ AnswerFormSet = inlineformset_factory(
     max_num=4,
     validate_max=True
 )
+
+class TakeQuizForm(forms.ModelForm):
+    answer = forms.ModelChoiceField(
+        queryset=Answer.objects.none(),
+        widget=forms.RadioSelect(),
+        required=True,
+        empty_label=None)
+
+    class Meta:
+        model = StudentAnswer
+        fields = ('answer', )
+
+    def __init__(self, *args, **kwargs):
+        question = kwargs.pop('question')
+        super().__init__(*args, **kwargs)
+        self.fields['answer'].queryset = question.answers.order_by('?')

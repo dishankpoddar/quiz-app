@@ -37,7 +37,7 @@
             <td class="align-middle">{{ assigned_quiz.quiz.author }}</td>
             <td class="align-middle">{{ assigned_quiz.questions_count }}</td>
             <td class="align-middle">
-              <a href="{% url 'quiz-edit' assigned_quiz.quiz.pk %}" class="btn btn-warning">Start Quiz</a>
+              <a href="{% url 'quiz-take' assigned_quiz.quiz.pk %}" class="btn btn-warning">Start Quiz</a>
             </td>
           </tr>
         {% empty %}
@@ -67,7 +67,7 @@
             <td class="align-middle">{{ started_quiz.quiz.author }}</td>
             <td class="align-middle">{{ started_quiz.questions_count }}</td>
             <td class="align-middle">
-              <a href="{% url 'quiz-edit' started_quiz.quiz.pk %}" class="btn btn-warning">Continue Quiz</a>
+              <a href="{% url 'quiz-take' started_quiz.quiz.pk %}" class="btn btn-warning">Continue Quiz</a>
             </td>
           </tr>
         {% empty %}

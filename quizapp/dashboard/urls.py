@@ -1,6 +1,6 @@
 from django.urls import path
 from . import views
-from .views import (ListQuizView,CreateQuizView,UpdateQuizView,DeleteQuizView,AssignQuizView,
+from .views import (ListQuizView,CreateQuizView,UpdateQuizView,DeleteQuizView,AssignQuizView,TakeQuizView,
                     SelectQuestionView,ListQuestionView,CreateQuestionView,UpdateQuestionView,DeleteQuestionView,
                     StudentDashboard,TeacherDashboard)
 from django.contrib.auth import views as auth_views
@@ -18,6 +18,7 @@ urlpatterns = [
     path('password-reset-complete', auth_views.PasswordResetCompleteView.as_view(template_name='dashboard/password_reset_complete.html'),name="password_reset_complete"),
     path('dashboard/teacher', TeacherDashboard.as_view(), name='teacher-dashboard'),
     path('dashboard/student', StudentDashboard.as_view(), name='student-dashboard'),
+    path('quiz/<uuid:pk>/take', TakeQuizView.as_view(), name='quiz-take'),
     path('quiz/view/', ListQuizView.as_view(), name='quiz-view'),
     path('quiz/add/', CreateQuizView.as_view(), name='quiz-add'),
     path('quiz/<uuid:pk>/', UpdateQuizView.as_view(), name='quiz-edit'),
