@@ -24,37 +24,10 @@ class SignUpForm(UserCreationForm):
         user.save()
         return user
 
-class TeacherSignUpForm(UserCreationForm):
-    class Meta(UserCreationForm.Meta):
-        model = User
-    
-    @transaction.atomic
-    def save(self, commit=True):
-        user = super().save(commit=False)
-        user.role = User.TEACHER
-        user.save()
-        teacher = Teacher.objects.create(user=user)
-        return user
-
-
-class StudentSignUpForm(UserCreationForm):
-    class Meta(UserCreationForm.Meta):
-        model = User
-
-    @transaction.atomic
-    def save(self):
-        user = super().save(commit=False)
-        user.role = User.STUDENT
-        user.save()
-        student = Student.objects.create(user=user)
-        return user
-
 class QuestionForm(forms.ModelForm):
     class Meta:
         model = Question
         fields = ('text', )
-
-
 
 class BaseAnswerInlineFormSet(forms.BaseInlineFormSet):
     def clean(self):

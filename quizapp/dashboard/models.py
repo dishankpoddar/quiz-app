@@ -82,7 +82,7 @@ class AssignedQuiz(models.Model):
     STATUS_CHOICES = [
         (ASSIGNED,'Assigned'),
         (STARTED,'Started'),
-        (COMPLETED,'Assigned'),
+        (COMPLETED,'Completed'),
     ]
     status = models.CharField(max_length=2,choices=STATUS_CHOICES,default=ASSIGNED,)
 

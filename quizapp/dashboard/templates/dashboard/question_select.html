@@ -28,26 +28,26 @@
             <div class="card-body bg-danger border-danger text-white py-2">{{ error }}</div>
           {% endfor %}
           <tbody>
-            {% for q in questions %}
+            {% for add_question in add_questions %}
               <tr>
                 <td class="align-middle">
-                    <a href="{% url 'question-edit' q.question.pk%}">{{ q.question.text }}</a>
+                    <a href="{% url 'question-edit' add_question.question.pk%}">{{ add_question.question.text }}</a>
                 </td>
                 <td class="align-middle">
-                    {{ q.question.author }}
+                    {{ add_question.question.author }}
                 </td>
                 <td class="align-middle">
-                    {% for a in q.answers%}
-                    {% if a.is_correct %}
-                        <strong class="text-success">{{a.text}}</strong>
+                    {% for answer in add_question.answers%}
+                    {% if answer.is_correct %}
+                        <strong class="text-success">{{answer.text}}</strong>
                     {% else %}
-                        <strong class="text-danger">{{a.text}}</strong>
+                        <strong class="text-danger">{{answer.text}}</strong>
                     {% endif %}
                     <br>
                     {% endfor %}
                 </td>
                 <td class="align-middle">
-                  <input type="checkbox" name = "{{q.question.pk}}" value="{{q.question}}">
+                  <input type="checkbox" name = "{{add_question.question.pk}}" value="{{add_question.question}}">
                 </td>
               </tr>
             {% empty %}

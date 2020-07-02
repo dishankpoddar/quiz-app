@@ -1,11 +1,12 @@
 from django.shortcuts import render,HttpResponse, redirect,get_object_or_404
 from django.conf import settings 
 from django.contrib import messages
-from .forms import SignUpForm,TeacherSignUpForm,StudentSignUpForm,BaseAnswerInlineFormSet,AnswerFormSet,QuestionForm,TakeQuizForm
+from .forms import SignUpForm,BaseAnswerInlineFormSet,AnswerFormSet,QuestionForm,TakeQuizForm
 from .models import User,Quiz,Question,Answer,SelectedQuestion,AssignedQuiz,Student
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
-from django.views.generic import View,TemplateView,CreateView, DeleteView, DetailView, ListView,UpdateView,FormView
+from django.views.generic import (View,TemplateView,CreateView, DeleteView, DetailView, 
+                                    ListView,UpdateView,FormView)
 from django.db import transaction
 from django.db.models import Avg, Count, F, Aggregate
 from django.urls import reverse, reverse_lazy
@@ -14,9 +15,6 @@ from django.urls import reverse, reverse_lazy
 # Create your views here.
 def index(request):
     return render(request, 'dashboard/home.html')
-
-def register(request):
-    return render(request, 'dashboard/signup.html')
 
 @login_required
 def dashboard(request):
@@ -28,7 +26,7 @@ def dashboard(request):
         else:
             return redirect('index')
 
-def registration(request):
+def signup(request):
     if(request.method == 'POST'):
         form = SignUpForm(request.POST)
         if(form.is_valid()):
@@ -38,7 +36,7 @@ def registration(request):
             return redirect('login')
     else:
         form = SignUpForm()
-    return render(request,'dashboard/register.html',{'form':form,'is_student':False})
+    return render(request,'dashboard/signup.html',{'form':form,'is_student':False})
 
 @method_decorator(login_required, name="dispatch")
 class StudentDashboard(TemplateView):
@@ -76,6 +74,7 @@ class TakeQuizView(CreateView):
         answered_questions = student.answered \
             .filter(quiz=quiz) \
             .values_list('answer__question__pk', flat=True)
+        #selected_questions = quiz.selected_question.select_related('questions').order_by('-date')
         selected_questions = quiz.selected_question.all().order_by('?')
         questions = []
         for selected_question in selected_questions:
@@ -127,9 +126,9 @@ class TakeQuizView(CreateView):
                     assigned_quiz.status = AssignedQuiz.COMPLETED
                     assigned_quiz.save()
                     if score < 50.0:
-                        messages.warning(request, 'Better luck next time! Your score for the quiz %s was %s.' % (quiz.title, score))
+                        messages.warning(request, f'Better luck next time! Your score for the quiz {quiz.title} was {score}.')
                     else:
-                        messages.success(request, 'Congratulations! You completed the quiz %s with success! You scored %s points.' % (quiz.title, score))
+                        messages.success(request, f'Congratulations! You completed the quiz {quiz.title} with success! You scored {score} points.')
                     return redirect('student-dashboard')
 
 @method_decorator(login_required, name="dispatch")
@@ -166,7 +165,7 @@ class UpdateQuizView(UpdateView):
     template_name = 'dashboard/quiz_edit.html'
     
     def get_context_data(self, **kwargs):
-        kwargs['questions'] = self.get_object().selected_question.annotate(answer_count = Count(F('question__answers')))
+        kwargs['selected_questions'] = self.get_object().selected_question.annotate(answer_count = Count(F('question__answers')))
         return super().get_context_data(**kwargs)
 
 
@@ -183,7 +182,7 @@ class DeleteQuizView(DeleteView):
 
     def delete(self, request, *args, **kwargs):
         quiz = self.get_object()
-        messages.success(request, 'The quiz "%s" was deleted with success!' % quiz.title)
+        messages.success(request, f'The quiz "{quiz.title}" was deleted with success!' )
         return super().delete(request, *args, **kwargs)
 
     def get_queryset(self):
@@ -218,35 +217,29 @@ class AssignQuizView(CreateView):
     def get(self,request,pk):
         quiz = get_object_or_404(Quiz, pk=pk ,author=request.user.teacher)
         students = Student.objects.all()
-        selected_students = quiz.assigned_quizzes.all()
-        selected = []
-        for selected_student in selected_students:
-            selected.append(selected_student.student)
+        selected_students = list(quiz.assigned_quizzes.select_related('student').all())
         return render(request, 'dashboard/quiz_assign.html', {
             'students' : students,
-            'selected' : selected,
+            'selected_students' : selected_students,
             'quiz': quiz,
         })
     
     def post(self,request,pk):
         quiz = get_object_or_404(Quiz, pk=pk)
-        selected = []
-        for x in request.POST:
-            selected.append(x)
-        selected.pop(0)
+        post_data = list(request.POST)[1:]
         selected_students = quiz.assigned_quizzes.all()
-        old = []
+        already_selected = []
         for selected_student in selected_students:
-            old.append(selected_student.student.pk)
-        for x in old:
-            if x not in selected:
-                student = get_object_or_404(Student, pk=x )
+            already_selected.append(selected_student.student.pk)
+        for student_pk in already_selected:
+            if student_pk not in post_data:
+                student = get_object_or_404(Student, pk=student_pk )
                 AssignedQuiz.objects.filter(student=student,quiz=quiz).delete()
-        for x in selected:
-            student = get_object_or_404(Student, pk=x )
+        for student_pk in post_data:
+            student = get_object_or_404(Student, pk=student_pk )
             assign_quiz = AssignedQuiz(student=student,quiz=quiz)
             assign_quiz.save()
-        messages.success(request, '"%s" assigned to student(s)!' % (quiz.title) )        
+        messages.success(request, f'"{quiz.title}" assigned to student(s)!')        
         return redirect('quiz-edit',pk)
 
 
@@ -260,31 +253,25 @@ class SelectQuestionView(CreateView):
     def get(self,request,pk):
         quiz = get_object_or_404(Quiz, pk=pk ,author=request.user.teacher)
         some_questions = Question.objects.all()
-        selected_questions = quiz.selected_question.all()
-        questions = []
-        selected = []
-        for selected_question in selected_questions:
-            selected.append(selected_question.question)
+        selected_questions = list(quiz.selected_question.select_related('question').all())
+        add_questions = []
         for some_question in some_questions:
-            if(some_question not in selected):
+            if(some_question not in selected_questions):
                 arr = {"question":some_question,"answers":some_question.answers.all()}
-                questions.append(arr)
+                add_questions.append(arr)
         return render(request, 'dashboard/question_select.html', {
-            'questions': questions,
+            'add_questions': add_questions,
             'quiz': quiz,
         })
     
     def post(self,request,pk):
         quiz = get_object_or_404(Quiz, pk=pk)
-        selected = []
-        for x in request.POST:
-            selected.append(x)
-        selected.pop(0)
-        for x in selected:
-            question = get_object_or_404(Question, pk=x )
+        post_data = list(request.POST)[1:]
+        for question_pk in post_data:
+            question = get_object_or_404(Question, pk=question_pk)
             select_question = SelectedQuestion(question=question,quiz=quiz)
             select_question.save()
-        messages.success(request, 'Question(s) added to "%s"!' % (quiz.title) )
+        messages.success(request, f'Question(s) added to "{quiz.title}"!')
         return redirect('quiz-edit',pk)
 
 
@@ -297,7 +284,7 @@ def remove_question(request,pk=None,select_pk=None):
     selected_question = SelectedQuestion.objects.get(pk=select_pk)
     question = selected_question.question
     selected_question.delete()
-    messages.success(request, 'The question "%s" was removed from "%s"!' % (question.text , quiz.title) )
+    messages.success(request, f'The question "{question.text}" was removed from "{quiz.title}"!')
     return redirect('quiz-edit',pk)
 
 
@@ -371,7 +358,7 @@ class DeleteQuestionView(DeleteView):
 
     def delete(self, request, *args, **kwargs):
         question = self.get_object()
-        messages.success(request, 'The question "%s" was deleted with success!' % question.text)
+        messages.success(request, f'The question "{question.text}" was deleted with success!')
         return super().delete(request, *args, **kwargs)
 
     def get_queryset(self):

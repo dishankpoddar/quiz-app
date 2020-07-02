@@ -1,15 +1,15 @@
 from django.urls import path
 from . import views
-from .views import (ListQuizView,CreateQuizView,UpdateQuizView,DeleteQuizView,AssignQuizView,TakeQuizView,ResultQuizView,
-                    SelectQuestionView,ListQuestionView,CreateQuestionView,UpdateQuestionView,DeleteQuestionView,
-                    StudentDashboard,TeacherDashboard)
+from .views import (ListQuizView,CreateQuizView,UpdateQuizView,DeleteQuizView,AssignQuizView,
+                    TakeQuizView,ResultQuizView,SelectQuestionView,ListQuestionView,CreateQuestionView,
+                    UpdateQuestionView,DeleteQuestionView,StudentDashboard,TeacherDashboard)
 from django.contrib.auth import views as auth_views
 
 urlpatterns = [    
     path('', views.index, name='index'),
     path('home', views.index, name='index'),
     path('dashboard/',views.dashboard, name='dashboard'),
-    path('signup/',views.registration, name='register'),
+    path('signup/',views.signup, name='signup'),
     path('login/', auth_views.LoginView.as_view(template_name='dashboard/login.html'),name="login"),
     path('logout/', auth_views.LogoutView.as_view(template_name='dashboard/logout.html'),name="logout"),
     path('password-reset/', auth_views.PasswordResetView.as_view(template_name='dashboard/password_reset.html'),name="password_reset"),

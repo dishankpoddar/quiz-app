@@ -31,7 +31,7 @@
                 <td class="align-middle">
                   {{ student }}
                 </td>
-                {% if student in selected %}
+                {% if student in selected_students %}
                 <td class="align-middle">
                   <input type="checkbox" name = "{{student.pk}}" value="{{student}}" checked>
                 </td>
