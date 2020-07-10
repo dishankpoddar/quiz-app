@@ -11,8 +11,6 @@ from django.db import transaction
 from django.db.models import Avg, Count, F, Aggregate
 from django.urls import reverse, reverse_lazy
 
-
-# Create your views here.
 def index(request):
     return render(request, 'dashboard/home.html')
 
@@ -172,7 +170,6 @@ class UpdateQuizView(UpdateView):
     def get_success_url(self):
         return reverse('quiz-edit', kwargs={'pk': self.object.pk})
 
-
 @method_decorator(login_required, name='dispatch')
 class DeleteQuizView(DeleteView):
     model = Quiz
@@ -287,7 +284,6 @@ def remove_question(request,pk=None,select_pk=None):
     messages.success(request, f'The question "{question.text}" was removed from "{quiz.title}"!')
     return redirect('quiz-edit',pk)
 
-
 @method_decorator(login_required, name="dispatch")
 class ListQuestionView(ListView):
     model = Question
@@ -363,3 +359,4 @@ class DeleteQuestionView(DeleteView):
 
     def get_queryset(self):
         return self.request.user.teacher.questions.all()
+

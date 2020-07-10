@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views
+from . import views,api
 from .views import (ListQuizView,CreateQuizView,UpdateQuizView,DeleteQuizView,AssignQuizView,
                     TakeQuizView,ResultQuizView,SelectQuestionView,ListQuestionView,CreateQuestionView,
                     UpdateQuestionView,DeleteQuestionView,StudentDashboard,TeacherDashboard)
@@ -31,4 +31,10 @@ urlpatterns = [
     path('question/add/', CreateQuestionView.as_view(), name='question-add'),
     path('question/<uuid:pk>/', UpdateQuestionView.as_view(), name='question-edit'),
     path('question/<uuid:pk>/delete', DeleteQuestionView.as_view(), name='question-delete'),
+]
+urlpatterns += [
+    path('api/register/', api.UserRegisterAPIView.as_view() ,name="api-register"),
+    path('api/login/', api.UserLoginAPIView.as_view() ,name="api-login"),
+    path('api/quiz/view', api.ListQuizAPIView.as_view() ,name="api-quiz-view"),
+
 ]
