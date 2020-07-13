@@ -7,12 +7,12 @@ from django.db.models import Avg, Count, F, Aggregate
 from django.urls import reverse, reverse_lazy
 
 from .serializers import (SignupSerializer,LoginSerializer,
-    ListQuizSerializer,UpdateQuizSerializer,CreateQuizSerializer,
+    ListQuizSerializer,update_quiz_serializer,CreateQuizSerializer,
     ListQuestionSerializer,UpdateQuestionSerializer,CreateQuestionSerializer,
-    ListAnswerSerializer)
+    ListAnswerSerializer,SelectQuestionSerializer)
 from rest_framework import generics,status,permissions
 from rest_framework.response import Response
-from .permissions import IsAuthorOrReadOnly,IsTeacher
+from .permissions import IsAuthorOrReadOnly,IsTeacher,IsAuthor
 
 
 class UserRegisterAPIView(generics.CreateAPIView):
@@ -47,13 +47,21 @@ class ListQuizAPIView(generics.ListAPIView):
 
 class UpdateQuizAPIView(generics.RetrieveUpdateAPIView):
     queryset = Quiz.objects.all()
-    serializer_class = UpdateQuizSerializer
     permission_classes = [permissions.IsAuthenticated,IsAuthorOrReadOnly,IsTeacher]
+
+    def get_serializer_class(self):
+        return update_quiz_serializer(
+                request=self.request
+                )
 
 class DeleteQuizAPIView(generics.DestroyAPIView):
     queryset = Quiz.objects.all()
-    serializer_class = UpdateQuizSerializer
-    permission_classes = [permissions.IsAuthenticated,IsAuthorOrReadOnly,IsTeacher]
+    permission_classes = [permissions.IsAuthenticated,IsAuthor,IsTeacher]
+
+    def get_serializer_class(self):
+        return update_quiz_serializer(
+                request=self.request
+                )
 
 class CreateQuestionAPIView(generics.CreateAPIView):
     queryset = Question.objects.all()
@@ -72,9 +80,32 @@ class UpdateQuestionAPIView(generics.RetrieveUpdateAPIView):
     queryset = Question.objects.all()
     serializer_class = UpdateQuestionSerializer
     permission_classes = [permissions.IsAuthenticated,IsAuthorOrReadOnly,IsTeacher]
-    
 
 class DeleteQuestionAPIView(generics.DestroyAPIView):
     queryset = Question.objects.all()
     serializer_class = UpdateQuestionSerializer
-    permission_classes = [permissions.IsAuthenticated,IsAuthorOrReadOnly,IsTeacher]
+    permission_classes = [permissions.IsAuthenticated,IsAuthor,IsTeacher]
+
+class SelectedQuestionAPIView(generics.ListAPIView):
+    queryset = Question.objects.all()
+    serializer_class = SelectQuestionSerializer
+    permission_classes = [permissions.IsAuthenticated,IsTeacher,IsAuthor]
+
+    def get_queryset(self,*args,**kwargs):
+        pk=self.kwargs['pk']
+        quiz = Quiz.objects.filter(pk=pk).filter(author=self.request.user.teacher).first()
+        #queryset = Question.objects.first()
+        #print(quiz)
+        #quiz = get_object_or_404(Quiz, pk=pk ,author=self.request.user.teacher)
+        if(quiz):
+            selected_question_objects = list(quiz.selected_question.select_related('question').all())
+            selected_questions = []
+            for selected_question_object in selected_question_objects:
+                selected_questions.append(selected_question_object.question.pk)
+            queryset = Question.objects.exclude(pk__in=selected_questions)
+        print(queryset)
+        return queryset
+
+        #def get(self,request,*args,**kwargs):
+
+    

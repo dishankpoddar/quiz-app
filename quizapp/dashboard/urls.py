@@ -39,6 +39,7 @@ urlpatterns += [
     path('api/quiz/view/', api.ListQuizAPIView.as_view() ,name="api-quiz-view"),
     path('api/quiz/<uuid:pk>/', api.UpdateQuizAPIView.as_view() ,name="api-quiz-edit"),
     path('api/quiz/<uuid:pk>/delete', api.DeleteQuizAPIView.as_view(), name='api-quiz-delete'),
+    path('api/quiz/<uuid:pk>/select', api.SelectedQuestionAPIView.as_view(), name='api-quiz-select'),
     path('api/question/add/', api.CreateQuestionAPIView.as_view() ,name="api-question-add"),
     path('api/question/view/', api.ListQuestionAPIView.as_view() ,name="api-question-view"),
     path('api/question/<uuid:pk>/', api.UpdateQuestionAPIView.as_view() ,name="api-question-edit"),
