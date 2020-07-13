@@ -214,7 +214,10 @@ class AssignQuizView(CreateView):
     def get(self,request,pk):
         quiz = get_object_or_404(Quiz, pk=pk ,author=request.user.teacher)
         students = Student.objects.all()
-        selected_students = list(quiz.assigned_quizzes.select_related('student').all())
+        selected_students_objects = list(quiz.assigned_quizzes.select_related('student').all())
+        selected_students = []
+        for selected_students_object in selected_students_objects:
+            selected_students.append(selected_students_object.student)
         return render(request, 'dashboard/quiz_assign.html', {
             'students' : students,
             'selected_students' : selected_students,
@@ -250,7 +253,10 @@ class SelectQuestionView(CreateView):
     def get(self,request,pk):
         quiz = get_object_or_404(Quiz, pk=pk ,author=request.user.teacher)
         some_questions = Question.objects.all()
-        selected_questions = list(quiz.selected_question.select_related('question').all())
+        selected_question_objects = list(quiz.selected_question.select_related('question').all())
+        selected_questions = []
+        for selected_question_object in selected_question_objects:
+            selected_questions.append(selected_question_object.question)
         add_questions = []
         for some_question in some_questions:
             if(some_question not in selected_questions):

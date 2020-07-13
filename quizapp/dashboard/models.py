@@ -1,7 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.urls import reverse
-from django import forms
 import uuid
 
 class User(AbstractUser):

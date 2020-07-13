@@ -35,6 +35,15 @@ urlpatterns = [
 urlpatterns += [
     path('api/register/', api.UserRegisterAPIView.as_view() ,name="api-register"),
     path('api/login/', api.UserLoginAPIView.as_view() ,name="api-login"),
-    path('api/quiz/view', api.ListQuizAPIView.as_view() ,name="api-quiz-view"),
+    path('api/quiz/add/', api.CreateQuizAPIView.as_view() ,name="api-quiz-add"),
+    path('api/quiz/view/', api.ListQuizAPIView.as_view() ,name="api-quiz-view"),
+    path('api/quiz/<uuid:pk>/', api.UpdateQuizAPIView.as_view() ,name="api-quiz-edit"),
+    path('api/quiz/<uuid:pk>/delete', api.DeleteQuizAPIView.as_view(), name='api-quiz-delete'),
+    path('api/question/add/', api.CreateQuestionAPIView.as_view() ,name="api-question-add"),
+    path('api/question/view/', api.ListQuestionAPIView.as_view() ,name="api-question-view"),
+    path('api/question/<uuid:pk>/', api.UpdateQuestionAPIView.as_view() ,name="api-question-edit"),
+    path('api/question/<uuid:pk>/delete', api.DeleteQuestionAPIView.as_view(), name='api-question-delete'),
 
 ]
+
+#app_name = 'dashboard'
