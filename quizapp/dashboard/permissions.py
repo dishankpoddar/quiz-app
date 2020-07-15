@@ -7,6 +7,14 @@ class IsTeacher(permissions.BasePermission):
             return(True)
         except:
             return(False)
+            
+class IsStudent(permissions.BasePermission):
+    def has_object_permission(self,request,view,obj):
+        try:
+            request.user.student
+            return(True)
+        except:
+            return(False)
 
 class IsAuthorOrReadOnly(permissions.BasePermission):
     def has_object_permission(self,request,view,obj):

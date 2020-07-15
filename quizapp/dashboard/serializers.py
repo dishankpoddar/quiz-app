@@ -1,6 +1,8 @@
 from rest_framework import serializers
-from .models import User,Student,Teacher,Quiz,Question,SelectedQuestion,Answer
-from django.db import transaction
+from .models import (User,Student,Teacher,
+                    Quiz,Question,SelectedQuestion,Answer,AssignedQuiz,
+                    StudentAnswer)
+from django.db import transaction,IntegrityError
 from django.shortcuts import get_object_or_404
 
 from rest_framework.request import Request
@@ -65,7 +67,7 @@ class CreateQuizSerializer(serializers.ModelSerializer):
         read_only_fields = ['author']
     
     def get_author(self,obj):
-        return DetailAuthorSerializer(obj['author'].user).data
+        return DetailUserSerializer(obj['author'].user).data
     
     @transaction.atomic
     def create(self,validated_data):
@@ -81,17 +83,41 @@ class CreateQuizSerializer(serializers.ModelSerializer):
         validated_data['pk'] = quiz.pk
         return validated_data
 
-class DetailAuthorSerializer(serializers.ModelSerializer):
+class DetailUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['pk','username']
 
+def teacher_dashboard_serializer(request):
+    class TeacherDashboardSerializer(serializers.ModelSerializer):
+        quizzes = serializers.SerializerMethodField()
+        questions = serializers.SerializerMethodField()
+        class Meta:
+            model = Teacher
+            fields = ['quizzes','questions']
+
+        def __init__(self, *args, **kwargs):
+            self.request = request
+            return super(TeacherDashboardSerializer, self).__init__(*args, **kwargs)
+
+        def get_quizzes(self,obj):
+            return ListQuizSerializer(obj.quizzes.all(),many=True,context={'request':self.request}).data
+
+        def get_questions(self,obj):
+            return ListQuestionSerializer(obj.questions.all(),many=True,context={'request':self.request}).data
+
+    return TeacherDashboardSerializer
+
 def list_selected_question_serializer(request,obj):    
     class ListSelectedQuestionSerializer(serializers.ModelSerializer):
         question = serializers.SerializerMethodField()
+        remove_url = serializers.HyperlinkedIdentityField(
+            read_only=True,
+            view_name='api-question-remove',
+        )
         class Meta:
             model = SelectedQuestion
-            fields = ['pk','question']
+            fields = ['pk','question','remove_url']
 
         def __init__(self, *args, **kwargs):
             self.request = request
@@ -100,7 +126,39 @@ def list_selected_question_serializer(request,obj):
         def get_question(self,obj):
             return  ListQuestionSerializer(obj.question,context={'request':self.request}).data
     
-    return ListSelectedQuestionSerializer(obj.selected_question.all(),many=True)
+    return ListSelectedQuestionSerializer(obj.selected_question.all(),many=True,context={'request':request})
+
+def list_assigned_quiz_serializer(request,obj):    
+    class ListAssignedQuizSerializer(serializers.ModelSerializer):
+        student = serializers.SerializerMethodField()
+        unassign_url = serializers.HyperlinkedIdentityField(
+            read_only=True,
+            view_name='api-quiz-unassign',
+        )
+        class Meta:
+            model = AssignedQuiz
+            fields = ['pk','student','status','score','unassign_url']
+
+        def get_student(self,obj):
+            return DetailUserSerializer(obj.student.user).data
+
+    return ListAssignedQuizSerializer(obj.assigned_quizzes.all(),many=True,context={'request':request})
+
+def student_dashboard_serializer(request):
+    class StudentDashboardSerializer(serializers.ModelSerializer):
+        assigned_quizzes = serializers.SerializerMethodField()
+        class Meta:
+            model = Teacher
+            fields = ['assigned_quizzes']
+
+        def __init__(self, *args, **kwargs):
+            self.request = request
+            return super(StudentDashboardSerializer, self).__init__(*args, **kwargs)
+
+        def get_assigned_quizzes(self,obj):
+            return  list_assigned_quiz_serializer(self.request,obj).data
+
+    return StudentDashboardSerializer
 
 class ListQuizSerializer(serializers.ModelSerializer):
     author = serializers.SerializerMethodField()
@@ -127,33 +185,52 @@ class ListQuizSerializer(serializers.ModelSerializer):
         return obj.assigned_quizzes.count()
 
     def get_author(self,obj):
-        return DetailAuthorSerializer(obj.author.user).data
+        return DetailUserSerializer(obj.author.user).data
 
 def update_quiz_serializer(request):
     class UpdateQuizSerializer(serializers.ModelSerializer):
         author = serializers.SerializerMethodField()
         selected_questions = serializers.SerializerMethodField()
+        assigned_quizzes = serializers.SerializerMethodField()
         delete_url = serializers.HyperlinkedIdentityField(
             read_only=True,
             view_name='api-quiz-delete',
         )
-        #selected_question = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
+        select_list_url = serializers.HyperlinkedIdentityField(
+            read_only=True,
+            view_name='api-quiz-select-list',
+        )
+        select_create_url = serializers.HyperlinkedIdentityField(
+            read_only=True,
+            view_name='api-quiz-select-create',
+        )
+        assign_list_url = serializers.HyperlinkedIdentityField(
+            read_only=True,
+            view_name='api-quiz-assign-list',
+        )
+        assign_create_url = serializers.HyperlinkedIdentityField(
+            read_only=True,
+            view_name='api-quiz-assign-create',
+        )
         class Meta:
             model = Quiz
-            fields = ['pk','title','description','author','delete_url']
-            fields += ['selected_questions',]
+            fields = ['pk','title','description','author','delete_url',]
+            fields += ['select_list_url','select_create_url','selected_questions']
+            fields += ['assign_list_url','assign_create_url','assigned_quizzes']
             read_only_fields = ['author']
 
         def __init__(self, *args, **kwargs):
             self.request = request
             return super(UpdateQuizSerializer, self).__init__(*args, **kwargs)
 
-        
         def get_selected_questions(self,obj):
             return  list_selected_question_serializer(self.request,obj).data
 
+        def get_assigned_quizzes(self,obj):
+            return  list_assigned_quiz_serializer(self.request,obj).data
+
         def get_author(self,obj):
-            return DetailAuthorSerializer(obj.author.user).data
+            return DetailUserSerializer(obj.author.user).data
 
     return UpdateQuizSerializer
 
@@ -165,7 +242,7 @@ class CreateQuestionSerializer(serializers.ModelSerializer):
         read_only_fields = ['author']
 
     def get_author(self,obj):
-        return DetailAuthorSerializer(obj['author'].user).data
+        return DetailUserSerializer(obj['author'].user).data
     
     @transaction.atomic
     def create(self,validated_data):
@@ -204,7 +281,7 @@ class ListQuestionSerializer(serializers.ModelSerializer):
         return obj.answers.count()
 
     def get_author(self,obj):
-        return DetailAuthorSerializer(obj.author.user).data
+        return DetailUserSerializer(obj.author.user).data
 
 class ListAnswerSerializer(serializers.ModelSerializer):
     class Meta:
@@ -234,7 +311,7 @@ class UpdateQuestionSerializer(serializers.ModelSerializer):
         read_only_fields = ['author']
 
     def get_author(self,obj):
-        return DetailAuthorSerializer(obj.author.user).data
+        return DetailUserSerializer(obj.author.user).data
     
     def update(self,instance,validated_data):
         old_answers = list(instance.answers.all())
@@ -256,7 +333,12 @@ class UpdateQuestionSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
-class SelectQuestionSerializer(serializers.ModelSerializer):
+class RemoveQuestionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SelectedQuestion
+        fields = '__all__'
+
+class ListSelectQuestionSerializer(serializers.ModelSerializer):
     author = serializers.SerializerMethodField()
     answers = ListAnswerSerializer(many=True)
     add = serializers.BooleanField(default= False)
@@ -268,13 +350,77 @@ class SelectQuestionSerializer(serializers.ModelSerializer):
         read_only_fields = ['pk','text','author','answers']
 
     def get_author(self,obj):
-        return DetailAuthorSerializer(obj.author.user).data
+        return DetailUserSerializer(obj.author.user).data
 
-"""class SelectQuestionsSerializer(serializers.ModelSerializer):
-    question = SelectQuestionSerializer(many=True)
+class BulkCreateListSerializer(serializers.ListSerializer):
+    def create(self, validated_data):
+        result = [self.child.create(attrs) for attrs in validated_data]
+        print(result)
+        try:
+            self.child.Meta.model.objects.bulk_create(result)
+        except IntegrityError as e:
+            raise serializers.ValidationError(e)
+        return result
+
+class CreateSelectQuestionSerializer(serializers.ModelSerializer):
     class Meta:
-        model = SelectedQuestion"""
-    
+        model = SelectedQuestion
+        fields = ['pk','question','quiz']
+        list_serializer_class = BulkCreateListSerializer
+        
+    def create(self, validated_data):
+        #print(validated_data)
+        instance = SelectedQuestion(**validated_data)
+        if isinstance(self._kwargs["data"], dict):
+            instance.save()
 
+        return instance
 
-    
+class ListAssignQuizSerializer(serializers.ModelSerializer):
+    user = serializers.SerializerMethodField()
+    add = serializers.BooleanField(default= False)
+    class Meta:
+        model = Student
+        fields = ['pk','user','add']
+        read_only_fields = ['pk','user','add']
+
+    def get_user(self,obj):
+        return DetailUserSerializer(obj.user).data
+
+class UnAssignQuizSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AssignedQuiz
+        fields = '__all__'
+
+class CreateAssignQuizSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AssignedQuiz
+        fields = ['pk','student','quiz']
+        list_serializer_class = BulkCreateListSerializer
+        
+    def create(self, validated_data):
+        #print(validated_data)
+        instance = AssignedQuiz(**validated_data)
+        if isinstance(self._kwargs["data"], dict):
+            instance.save()
+
+        return instance
+
+def take_quiz_serializer(request,question,progress,data):
+    class TakeQuizSerializer(serializers.Serializer):
+        question = serializers.SerializerMethodField()
+        progress = serializers.SerializerMethodField()
+
+        def __init__(self, *args, **kwargs):
+            self.request = request
+            self.progress = progress
+            self.question = question
+            return super(TakeQuizSerializer, self).__init__(*args, **kwargs)
+
+        def get_question(self,obj):
+            return  UpdateQuestionSerializer(self.question,context={'request':self.request}).data
+        
+        def get_progress(self,obj):
+            return  self.progress
+
+    return TakeQuizSerializer(data=data)

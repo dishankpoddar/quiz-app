@@ -316,7 +316,6 @@ class CreateQuestionView(CreateView):
         messages.success(self.request, 'You may now add answers/options to the question.')
         return redirect('question-edit', question.pk)
 
-
 @method_decorator(login_required, name="dispatch")
 class UpdateQuestionView(UpdateView):
 
