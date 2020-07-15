@@ -135,10 +135,13 @@ def list_assigned_quiz_serializer(request,obj):
             read_only=True,
             view_name='api-quiz-unassign',
         )
+        quiz = serializers.HyperlinkedRelatedField(
+            read_only=True,
+            view_name='api-quiz-take'
+        )
         class Meta:
             model = AssignedQuiz
-            fields = ['pk','student','status','score','unassign_url']
-
+            fields = ['pk','quiz','student','status','score','unassign_url']
         def get_student(self,obj):
             return DetailUserSerializer(obj.student.user).data
 
@@ -379,10 +382,14 @@ class CreateSelectQuestionSerializer(serializers.ModelSerializer):
 class ListAssignQuizSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
     add = serializers.BooleanField(default= False)
+    take_url = serializers.HyperlinkedIdentityField(
+        read_only=True,
+        view_name='api-quiz-take',
+    )
     class Meta:
         model = Student
         fields = ['pk','user','add']
-        read_only_fields = ['pk','user','add']
+        read_only_fields = ['pk','user','add','take_url']
 
     def get_user(self,obj):
         return DetailUserSerializer(obj.user).data
@@ -424,3 +431,4 @@ def take_quiz_serializer(request,question,progress,data):
             return  self.progress
 
     return TakeQuizSerializer(data=data)
+
