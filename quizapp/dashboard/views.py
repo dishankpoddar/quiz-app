@@ -11,7 +11,12 @@ from django.db import transaction
 from django.db.models import Avg, Count, F, Aggregate
 from django.urls import reverse, reverse_lazy
 
+import logging
+
+logger = logging.getLogger("root")
+
 def index(request):
+    logger.error('Something went right :)!')
     return render(request, 'dashboard/home.html')
 
 @login_required

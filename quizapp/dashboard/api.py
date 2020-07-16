@@ -9,7 +9,8 @@ from django.urls import reverse, reverse_lazy
 from .serializers import (SignupSerializer,LoginSerializer,
     ListQuizSerializer,update_quiz_serializer,CreateQuizSerializer,
     ListQuestionSerializer,UpdateQuestionSerializer,CreateQuestionSerializer,
-    ListAnswerSerializer,teacher_dashboard_serializer,student_dashboard_serializer,take_quiz_serializer,
+    ListAnswerSerializer,teacher_dashboard_serializer,student_dashboard_serializer,
+    take_quiz_serializer,CreateStudentAnswerSerializer,
     ListSelectQuestionSerializer,CreateSelectQuestionSerializer,RemoveQuestionSerializer,
     ListAssignQuizSerializer,CreateAssignQuizSerializer,UnAssignQuizSerializer)
 from rest_framework import generics,status,permissions
@@ -291,3 +292,12 @@ class TakeQuizAPIView(generics.ListAPIView):
     #     obj = get_object_or_404(queryset, **filter)
     #     self.check_object_permissions(self.request, obj)
     #     return obj
+
+class CreateStudentAnswerAPIView(generics.CreateAPIView):
+    serializer_class = CreateStudentAnswerSerializer
+    permission_classes = [permissions.IsAuthenticated,IsStudent]
+
+    def perform_create(self,serializer):
+        quiz_pk = self.kwargs['pk']
+        quiz = get_object_or_404(Quiz, pk=quiz_pk)
+        serializer.save(student=self.request.user.student,quiz=quiz)

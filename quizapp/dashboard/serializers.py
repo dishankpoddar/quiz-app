@@ -137,7 +137,7 @@ def list_assigned_quiz_serializer(request,obj):
         )
         quiz = serializers.HyperlinkedRelatedField(
             read_only=True,
-            view_name='api-quiz-take'
+            view_name='api-quiz-get'
         )
         class Meta:
             model = AssignedQuiz
@@ -382,14 +382,10 @@ class CreateSelectQuestionSerializer(serializers.ModelSerializer):
 class ListAssignQuizSerializer(serializers.ModelSerializer):
     user = serializers.SerializerMethodField()
     add = serializers.BooleanField(default= False)
-    take_url = serializers.HyperlinkedIdentityField(
-        read_only=True,
-        view_name='api-quiz-take',
-    )
     class Meta:
         model = Student
         fields = ['pk','user','add']
-        read_only_fields = ['pk','user','add','take_url']
+        read_only_fields = ['pk','user','add']
 
     def get_user(self,obj):
         return DetailUserSerializer(obj.user).data
@@ -432,3 +428,22 @@ def take_quiz_serializer(request,question,progress,data):
 
     return TakeQuizSerializer(data=data)
 
+class CreateStudentAnswerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StudentAnswer
+        fields = '__all__'
+        read_only_fields = ['quiz','student']
+    
+    # @transaction.atomic
+    # def create(self,validated_data):
+    #     title = validated_data['title']
+    #     description = validated_data['description']
+    #     author = validated_data['author']
+    #     quiz = Quiz(
+    #         title = title,
+    #         description = description,
+    #         author = author
+    #     )
+    #     quiz.save()
+    #     validated_data['pk'] = quiz.pk
+    #     return validated_data
