@@ -10,7 +10,7 @@ from .serializers import (SignupSerializer,LoginSerializer,
     ListQuizSerializer,update_quiz_serializer,CreateQuizSerializer,
     ListQuestionSerializer,UpdateQuestionSerializer,CreateQuestionSerializer,
     ListAnswerSerializer,teacher_dashboard_serializer,student_dashboard_serializer,
-    take_quiz_serializer,CreateStudentAnswerSerializer,
+    get_quiz_serializer,CreateStudentAnswerSerializer,
     ListSelectQuestionSerializer,CreateSelectQuestionSerializer,RemoveQuestionSerializer,
     ListAssignQuizSerializer,CreateAssignQuizSerializer,UnAssignQuizSerializer)
 from rest_framework import generics,status,permissions
@@ -18,8 +18,11 @@ from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from .permissions import IsAuthorOrReadOnly,IsTeacher,IsAuthor,IsStudent
 
+import logging
 
-class UserRegisterAPIView(generics.CreateAPIView):
+logger = logging.getLogger(__name__)
+
+class UserSignupAPIView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = SignupSerializer
     permission_classes = [permissions.AllowAny]
@@ -45,7 +48,6 @@ class TeacherDashboardAPIView(generics.RetrieveAPIView):
 
     def get_object(self):
             queryset = self.filter_queryset(self.get_queryset())
-            # make sure to catch 404's below
             obj = queryset.get(user=self.request.user)
             self.check_object_permissions(self.request, obj)
             return obj
@@ -59,7 +61,6 @@ class StudentDashboardAPIView(generics.RetrieveAPIView):
 
     def get_object(self):
             queryset = self.filter_queryset(self.get_queryset())
-            # make sure to catch 404's below
             obj = queryset.get(user=self.request.user)
             self.check_object_permissions(self.request, obj)
             return obj
@@ -155,7 +156,6 @@ class CreateSelectQuestionAPIView(generics.CreateAPIView):
         return super(CreateSelectQuestionAPIView, self).get_serializer(*args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        #print(request.data)
         """for select_question in select_questions:
             select_question.quiz=quiz"""
         if isinstance(request.data, list):
@@ -163,8 +163,8 @@ class CreateSelectQuestionAPIView(generics.CreateAPIView):
                 item["quiz"] = kwargs["pk"]
         else:
             raise ValidationError("Invalid Input")
-        #print(request.data)
-        return super(CreateSelectQuestionAPIView, self).post(request, *args, **kwargs)
+        return_data = super(CreateAssignQuizAPIView, self).post(request, *args, **kwargs).data
+        return Response(return_data[:],status = status.HTTP_201_CREATED)
 
 class RemoveQuestionAPIView(generics.DestroyAPIView):
     serializer_class = RemoveQuestionSerializer
@@ -229,7 +229,6 @@ class CreateAssignQuizAPIView(generics.CreateAPIView):
         return super(CreateAssignQuizAPIView, self).get_serializer(*args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        #print(request.data)
         """for select_question in select_questions:
             select_question.quiz=quiz"""
         if isinstance(request.data, list):
@@ -237,8 +236,8 @@ class CreateAssignQuizAPIView(generics.CreateAPIView):
                 item["quiz"] = kwargs["pk"]
         else:
             raise ValidationError("Invalid Input")
-        #print(request.data)
-        return super(CreateAssignQuizAPIView, self).post(request, *args, **kwargs)
+        return_data = super(CreateAssignQuizAPIView, self).post(request, *args, **kwargs).data
+        return Response(return_data[:],status = status.HTTP_201_CREATED)
 
 class TakeQuizAPIView(generics.ListAPIView):
     queryset = Question.objects.all()
@@ -259,7 +258,6 @@ class TakeQuizAPIView(generics.ListAPIView):
     def get_questions(self,student,quiz):
         total_questions = quiz.selected_question.count()
         unanswered_questions = self.get_unanswered_questions(student,quiz)
-        print(total_questions,unanswered_questions)
         total_unanswered_questions = len(unanswered_questions)
         progress = 100 - round(((total_unanswered_questions - 1) / total_questions) * 100)
         question = unanswered_questions[0]
@@ -270,28 +268,17 @@ class TakeQuizAPIView(generics.ListAPIView):
         quiz = get_object_or_404(Quiz, pk=quiz_pk)
         student = self.request.user.student
         question,progress= self.get_questions(student,quiz)
-        #print(question)
         assigned_quiz = get_object_or_404(AssignedQuiz, quiz=quiz,student=student)
         assigned_quiz.status = AssignedQuiz.STARTED
         assigned_quiz.save()
         data = {"question":question,"progress":progress}
-        return take_quiz_serializer(self.request,question,progress,data)
+        return get_quiz_serializer(self.request,question,progress,data)
 
     def get(self,request,*args,**kwargs):
         serializer = self.get_serializer_class()
         if(serializer.is_valid(raise_exception=True)):
-            new_data = serializer.data
             return Response(serializer.data,status = status.HTTP_200_OK)
         return Response(serializer.errors,status.HTTP_400_BAD_REQUEST)
-    # def get_object(self):
-    #     queryset = self.get_queryset()
-    #     filter = {}
-    #     for field in self.multiple_lookup_fields:
-    #         filter[field] = self.kwargs[field]
-
-    #     obj = get_object_or_404(queryset, **filter)
-    #     self.check_object_permissions(self.request, obj)
-    #     return obj
 
 class CreateStudentAnswerAPIView(generics.CreateAPIView):
     serializer_class = CreateStudentAnswerSerializer

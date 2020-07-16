@@ -10,13 +10,14 @@ from django.views.generic import (View,TemplateView,CreateView, DeleteView, Deta
 from django.db import transaction
 from django.db.models import Avg, Count, F, Aggregate
 from django.urls import reverse, reverse_lazy
+from .decorators import student_required,teacher_required,logout_required
+from django.contrib.auth import views as auth_views
 
 import logging
 
-logger = logging.getLogger("root")
+logger = logging.getLogger(__name__)
 
 def index(request):
-    logger.error('Something went right :)!')
     return render(request, 'dashboard/home.html')
 
 @login_required
@@ -29,6 +30,7 @@ def dashboard(request):
         else:
             return redirect('index')
 
+@logout_required
 def signup(request):
     if(request.method == 'POST'):
         form = SignUpForm(request.POST)
@@ -41,7 +43,7 @@ def signup(request):
         form = SignUpForm()
     return render(request,'dashboard/signup.html',{'form':form,'is_student':False})
 
-@method_decorator(login_required, name="dispatch")
+@method_decorator([login_required, student_required], name="dispatch")
 class StudentDashboard(TemplateView):
     template_name = 'dashboard/student_dashboard.html'
 
@@ -55,7 +57,7 @@ class StudentDashboard(TemplateView):
             .annotate(questions_count=Count('quiz__selected_question', distinct=True))
         return context
 
-@method_decorator(login_required, name="dispatch")
+@method_decorator([login_required, teacher_required], name="dispatch")
 class TeacherDashboard(TemplateView):
     template_name = 'dashboard/teacher_dashboard.html'
 
@@ -69,7 +71,7 @@ class TeacherDashboard(TemplateView):
             .annotate(answer_count=Count('answers', distinct=True))
         return context
 
-@method_decorator(login_required, name="dispatch")
+@method_decorator([login_required, student_required], name="dispatch")
 class TakeQuizView(CreateView):
     template_name = 'dashboard/quiz_take.html'
 
@@ -77,7 +79,6 @@ class TakeQuizView(CreateView):
         answered_questions = student.answered \
             .filter(quiz=quiz) \
             .values_list('answer__question__pk', flat=True)
-        #selected_questions = quiz.selected_question.select_related('questions').order_by('-date')
         selected_questions = quiz.selected_question.all().order_by('?')
         questions = []
         for selected_question in selected_questions:
@@ -134,7 +135,7 @@ class TakeQuizView(CreateView):
                         messages.success(request, f'Congratulations! You completed the quiz {quiz.title} with success! You scored {score} points.')
                     return redirect('student-dashboard')
 
-@method_decorator(login_required, name="dispatch")
+@method_decorator([login_required, teacher_required], name="dispatch")
 class ListQuizView(ListView):
     model = Quiz
     ordering = ('name', )
@@ -147,7 +148,7 @@ class ListQuizView(ListView):
             .annotate(assigned_count=Count('assigned_quizzes', distinct=True))
         return queryset
 
-@method_decorator(login_required, name="dispatch")
+@method_decorator([login_required, teacher_required], name="dispatch")
 class CreateQuizView(CreateView):
     model = Quiz
     fields = ('title','description')
@@ -160,7 +161,7 @@ class CreateQuizView(CreateView):
         messages.success(self.request, 'The quiz was created with success! Go ahead and add some questions now.')
         return redirect('quiz-edit', quiz.pk)
 
-@method_decorator(login_required, name="dispatch")
+@method_decorator([login_required, teacher_required], name="dispatch")
 class UpdateQuizView(UpdateView):
     model = Quiz
     fields = ('title', 'description', )
@@ -175,7 +176,7 @@ class UpdateQuizView(UpdateView):
     def get_success_url(self):
         return reverse('quiz-edit', kwargs={'pk': self.object.pk})
 
-@method_decorator(login_required, name='dispatch')
+@method_decorator([login_required, teacher_required], name='dispatch')
 class DeleteQuizView(DeleteView):
     model = Quiz
     context_object_name = 'quiz'
@@ -190,7 +191,7 @@ class DeleteQuizView(DeleteView):
     def get_queryset(self):
         return self.request.user.teacher.quizzes.all()
 
-@method_decorator(login_required, name='dispatch')
+@method_decorator([login_required, teacher_required], name='dispatch')
 class ResultQuizView(DetailView):
     model = Quiz
     context_object_name = 'quiz'
@@ -212,7 +213,7 @@ class ResultQuizView(DetailView):
     def get_queryset(self):
         return self.request.user.teacher.quizzes.all()
 
-@method_decorator(login_required, name='dispatch')
+@method_decorator([login_required, teacher_required], name='dispatch')
 class AssignQuizView(CreateView):
     model = AssignedQuiz
 
@@ -251,7 +252,7 @@ class AssignQuizView(CreateView):
     def get_queryset(self):
         return self.request.user.teacher.quizzes.all()
 
-@method_decorator(login_required, name='dispatch')
+@method_decorator([login_required, teacher_required], name='dispatch')
 class SelectQuestionView(CreateView):
     model = SelectedQuestion
 
@@ -287,6 +288,7 @@ class SelectQuestionView(CreateView):
         return self.request.user.teacher.quizzes.all()
 
 @login_required
+@teacher_required
 def remove_question(request,pk=None,select_pk=None):
     quiz = get_object_or_404(Quiz, pk=pk ,author=request.user.teacher)
     selected_question = SelectedQuestion.objects.get(pk=select_pk)
@@ -295,7 +297,7 @@ def remove_question(request,pk=None,select_pk=None):
     messages.success(request, f'The question "{question.text}" was removed from "{quiz.title}"!')
     return redirect('quiz-edit',pk)
 
-@method_decorator(login_required, name="dispatch")
+@method_decorator([login_required, teacher_required], name="dispatch")
 class ListQuestionView(ListView):
     model = Question
     ordering = ('text', )
@@ -308,7 +310,7 @@ class ListQuestionView(ListView):
             .annotate(selected_count=Count('selected_question', distinct=True))
         return queryset
 
-@method_decorator(login_required, name="dispatch")
+@method_decorator([login_required, teacher_required], name="dispatch")
 class CreateQuestionView(CreateView):
     model = Question
     fields = ('text',)
@@ -321,7 +323,7 @@ class CreateQuestionView(CreateView):
         messages.success(self.request, 'You may now add answers/options to the question.')
         return redirect('question-edit', question.pk)
 
-@method_decorator(login_required, name="dispatch")
+@method_decorator([login_required, teacher_required], name="dispatch")
 class UpdateQuestionView(UpdateView):
 
     def get(self,request,pk):
@@ -355,7 +357,7 @@ class UpdateQuestionView(UpdateView):
     def get_success_url(self):
         return reverse('question-edit', kwargs={'pk': self.object.pk})
 
-@method_decorator(login_required, name='dispatch')
+@method_decorator([login_required, teacher_required], name='dispatch')
 class DeleteQuestionView(DeleteView):
     model = Question
     context_object_name = 'question'

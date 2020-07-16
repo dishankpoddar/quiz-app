@@ -5,10 +5,9 @@ from .models import (User,Student,Teacher,
 from django.db import transaction,IntegrityError
 from django.shortcuts import get_object_or_404
 
-from rest_framework.request import Request
-from django.test import RequestFactory
-factory = RequestFactory()
-request = factory.get('/')
+import logging
+
+logger = logging.getLogger(__name__)
 
 class SignupSerializer(serializers.ModelSerializer):
     class Meta:
@@ -175,7 +174,6 @@ class ListQuizSerializer(serializers.ModelSerializer):
         read_only=True,
         view_name='api-quiz-delete',
     )
-    #selected_question = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     class Meta:
         model = Quiz
         fields = ['edit_url','pk','title','description','author','delete_url']
@@ -271,7 +269,6 @@ class ListQuestionSerializer(serializers.ModelSerializer):
         read_only=True,
         view_name='api-question-delete',
     )
-    #selected_question = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     class Meta:
         model = Question
         fields = ['edit_url','pk','text','author','delete_url']
@@ -292,7 +289,6 @@ class ListAnswerSerializer(serializers.ModelSerializer):
         fields = ['pk','text','is_correct']
     
     def update(self, instance, validated_data):
-        print(validated_data)
         instance.text = validated_data.get('text', instance.text)
         instance.is_correct = validated_data.get('is_correct', instance.is_correct)
         instance.save()
@@ -306,7 +302,6 @@ class UpdateQuestionSerializer(serializers.ModelSerializer):
         read_only=True,
         view_name='api-question-delete',
     )
-    #answers = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     class Meta:
         model = Question
         fields = ['pk','text','author','delete_url']
@@ -345,7 +340,6 @@ class ListSelectQuestionSerializer(serializers.ModelSerializer):
     author = serializers.SerializerMethodField()
     answers = ListAnswerSerializer(many=True)
     add = serializers.BooleanField(default= False)
-    #answers = serializers.PrimaryKeyRelatedField(many=True, read_only=True)
     class Meta:
         model = Question
         fields = ['pk','text','author']
@@ -358,7 +352,6 @@ class ListSelectQuestionSerializer(serializers.ModelSerializer):
 class BulkCreateListSerializer(serializers.ListSerializer):
     def create(self, validated_data):
         result = [self.child.create(attrs) for attrs in validated_data]
-        print(result)
         try:
             self.child.Meta.model.objects.bulk_create(result)
         except IntegrityError as e:
@@ -372,7 +365,6 @@ class CreateSelectQuestionSerializer(serializers.ModelSerializer):
         list_serializer_class = BulkCreateListSerializer
         
     def create(self, validated_data):
-        #print(validated_data)
         instance = SelectedQuestion(**validated_data)
         if isinstance(self._kwargs["data"], dict):
             instance.save()
@@ -402,15 +394,14 @@ class CreateAssignQuizSerializer(serializers.ModelSerializer):
         list_serializer_class = BulkCreateListSerializer
         
     def create(self, validated_data):
-        #print(validated_data)
         instance = AssignedQuiz(**validated_data)
         if isinstance(self._kwargs["data"], dict):
             instance.save()
-
+        validated_data['pk']=instance.pk
         return instance
 
-def take_quiz_serializer(request,question,progress,data):
-    class TakeQuizSerializer(serializers.Serializer):
+def get_quiz_serializer(request,question,progress,data):
+    class GetQuizSerializer(serializers.Serializer):
         question = serializers.SerializerMethodField()
         progress = serializers.SerializerMethodField()
 
@@ -418,7 +409,7 @@ def take_quiz_serializer(request,question,progress,data):
             self.request = request
             self.progress = progress
             self.question = question
-            return super(TakeQuizSerializer, self).__init__(*args, **kwargs)
+            return super(GetQuizSerializer, self).__init__(*args, **kwargs)
 
         def get_question(self,obj):
             return  UpdateQuestionSerializer(self.question,context={'request':self.request}).data
@@ -426,24 +417,11 @@ def take_quiz_serializer(request,question,progress,data):
         def get_progress(self,obj):
             return  self.progress
 
-    return TakeQuizSerializer(data=data)
+    return GetQuizSerializer(data=data)
 
 class CreateStudentAnswerSerializer(serializers.ModelSerializer):
     class Meta:
         model = StudentAnswer
         fields = '__all__'
         read_only_fields = ['quiz','student']
-    
-    # @transaction.atomic
-    # def create(self,validated_data):
-    #     title = validated_data['title']
-    #     description = validated_data['description']
-    #     author = validated_data['author']
-    #     quiz = Quiz(
-    #         title = title,
-    #         description = description,
-    #         author = author
-    #     )
-    #     quiz.save()
-    #     validated_data['pk'] = quiz.pk
-    #     return validated_data
+

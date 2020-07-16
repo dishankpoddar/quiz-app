@@ -108,6 +108,8 @@ AUTH_USER_MODEL = "dashboard.User"
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGIN_URL = 'login'
 
+LOGOUT_URL = 'logout'
+
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.DjangoModelPermissionsOrAnonReadOnly',
@@ -124,8 +126,12 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
-        'file': {
+        'file_complex': {
             'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'file': {
+            'format': '{levelname} {asctime} {module} \t {message}',
             'style': '{',
         },
         'console': {
@@ -133,29 +139,22 @@ LOGGING = {
             'style': '{',
         },
     },
-    'filters': {
-        'require_debug_true': {
-            '()': 'django.utils.log.RequireDebugTrue',
-        },
-    },
     'handlers': {
         'console': {
-            'level': 'INFO',
-            'filters': ['require_debug_true'],
+            'level': 'DEBUG',
             'class': 'logging.StreamHandler',
             'formatter': 'console'
         },
         'file': {
-            'level': 'DEBUG',
+            'level': 'INFO',
             'class': 'logging.FileHandler',
             'formatter': 'file',
             'filename': os.path.join(BASE_DIR,'debug.log'),
-            
         }
     },
     'loggers': {
         'root': {
-            'handlers': ['file'],
+            'handlers': ['console'],
             'propagate': True,
         },
         'django': {

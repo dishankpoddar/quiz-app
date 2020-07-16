@@ -4,18 +4,19 @@ from .views import (ListQuizView,CreateQuizView,UpdateQuizView,DeleteQuizView,As
                     TakeQuizView,ResultQuizView,SelectQuestionView,ListQuestionView,CreateQuestionView,
                     UpdateQuestionView,DeleteQuestionView,StudentDashboard,TeacherDashboard)
 from django.contrib.auth import views as auth_views
+from .decorators import logout_required
 
 urlpatterns = [    
     path('', views.index, name='index'),
     path('home', views.index, name='index'),
     path('dashboard/',views.dashboard, name='dashboard'),
     path('signup/',views.signup, name='signup'),
-    path('login/', auth_views.LoginView.as_view(template_name='dashboard/login.html'),name="login"),
-    path('logout/', auth_views.LogoutView.as_view(template_name='dashboard/logout.html'),name="logout"),
-    path('password-reset/', auth_views.PasswordResetView.as_view(template_name='dashboard/password_reset.html'),name="password_reset"),
-    path('password-reset-confirm/<uidb64>/<token>', auth_views.PasswordResetConfirmView.as_view(template_name='dashboard/password_reset_confirm.html'),name="password_reset_confirm"),
-    path('password-reset-done', auth_views.PasswordResetDoneView.as_view(template_name='dashboard/password_reset_done.html'),name="password_reset_done"),
-    path('password-reset-complete', auth_views.PasswordResetCompleteView.as_view(template_name='dashboard/password_reset_complete.html'),name="password_reset_complete"),
+    path('login/', logout_required(auth_views.LoginView.as_view(template_name='dashboard/login.html')),name="login"),
+    path('logout/', logout_required(auth_views.LogoutView.as_view(template_name='dashboard/logout.html')),name="logout"),
+    path('password-reset/', logout_required(auth_views.PasswordResetView.as_view(template_name='dashboard/password_reset.html')),name="password_reset"),
+    path('password-reset-confirm/<uidb64>/<token>', logout_required(auth_views.PasswordResetConfirmView.as_view(template_name='dashboard/password_reset_confirm.html')),name="password_reset_confirm"),
+    path('password-reset-done', logout_required(auth_views.PasswordResetDoneView.as_view(template_name='dashboard/password_reset_done.html')),name="password_reset_done"),
+    path('password-reset-complete', logout_required(auth_views.PasswordResetCompleteView.as_view(template_name='dashboard/password_reset_complete.html')),name="password_reset_complete"),
     path('teacher', TeacherDashboard.as_view(), name='teacher-dashboard'),
     path('student', StudentDashboard.as_view(), name='student-dashboard'),
     path('quiz/<uuid:pk>/take', TakeQuizView.as_view(), name='quiz-take'),
@@ -33,7 +34,7 @@ urlpatterns = [
     path('question/<uuid:pk>/delete', DeleteQuestionView.as_view(), name='question-delete'),
 ]
 urlpatterns += [
-    path('api/register/', api.UserRegisterAPIView.as_view() ,name="api-register"),
+    path('api/signup/', api.UserSignupAPIView.as_view() ,name="api-signup"),
     path('api/login/', api.UserLoginAPIView.as_view() ,name="api-login"),
     path('api/teacher/', api.TeacherDashboardAPIView.as_view(), name='api-teacher-dashboard'),
     path('api/student/', api.StudentDashboardAPIView.as_view(), name='api-student-dashboard'),
@@ -55,5 +56,3 @@ urlpatterns += [
     path('api/question/<uuid:pk>/delete', api.DeleteQuestionAPIView.as_view(), name='api-question-delete'),
 
 ]
-
-#app_name = 'dashboard'
