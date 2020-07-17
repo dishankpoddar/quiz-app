@@ -10,25 +10,28 @@ from django.views.generic import (View,TemplateView,CreateView, DeleteView, Deta
 from django.db import transaction
 from django.db.models import Avg, Count, F, Aggregate
 from django.urls import reverse, reverse_lazy
-from .decorators import student_required,teacher_required,logout_required
+from .decorators import student_required,teacher_required,admin_required,logout_required
 from django.contrib.auth import views as auth_views
 
 import logging
 
 logger = logging.getLogger(__name__)
 
-def index(request):
-    return render(request, 'dashboard/home.html')
-
 @login_required
-def dashboard(request):
+def index(request):
     if request.user.is_authenticated:
-        if request.user.role == User.TEACHER:
+        if request.user.role == User.ADMIN:
+            return redirect('admin-dashboard')
+        elif request.user.role == User.TEACHER:
             return redirect('teacher-dashboard')
         elif request.user.role == User.STUDENT:
             return redirect('student-dashboard')
         else:
-            return redirect('index')
+            return redirect('logout')
+
+@login_required
+def admin_dashboard(request):
+    return render(request, 'dashboard/admin_dashboard.html')
 
 @logout_required
 def signup(request):

@@ -67,10 +67,21 @@ class Answer(models.Model):
         return self.text
 
 class SelectedQuestion(models.Model):
+    id = models.UUIDField( 
+         primary_key = True, 
+         default = uuid.uuid4, 
+         editable = False)
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='selected_question')
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='selected_question')
 
+    def __str__(self):
+        return f'{self.quiz}_{self.question}'
+
 class AssignedQuiz(models.Model):
+    id = models.UUIDField( 
+         primary_key = True, 
+         default = uuid.uuid4, 
+         editable = False)
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='assigned_quizzes')
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='assigned_quizzes')
     score = models.FloatField(default=0)
@@ -85,7 +96,17 @@ class AssignedQuiz(models.Model):
     ]
     status = models.CharField(max_length=2,choices=STATUS_CHOICES,default=ASSIGNED,)
 
+    def __str__(self):
+        return f'{self.quiz}_{self.student}'
+
 class StudentAnswer(models.Model):
+    id = models.UUIDField( 
+         primary_key = True, 
+         default = uuid.uuid4, 
+         editable = False)
     student = models.ForeignKey(Student, on_delete=models.CASCADE, related_name='answered')
     answer = models.ForeignKey(Answer, on_delete=models.CASCADE, related_name='answered')
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='answered')
+
+    def __str__(self):
+        return f'{self.quiz}_{self.student}_{self.answer.question}_{self.answer}'
