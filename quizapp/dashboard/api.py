@@ -18,6 +18,14 @@ from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from .permissions import IsAuthorOrReadOnly,IsTeacher,IsAuthor,IsStudent
 
+from rest_framework_jwt.settings import api_settings
+from django.conf import settings 
+from django.contrib.auth.signals import user_logged_in
+
+
+jwt_payload_handler = api_settings.JWT_PAYLOAD_HANDLER
+jwt_encode_handler = api_settings.JWT_ENCODE_HANDLER
+
 import logging
 
 logger = logging.getLogger(__name__)
@@ -36,6 +44,11 @@ class UserLoginAPIView(generics.GenericAPIView):
         serializer = LoginSerializer(data=data)
         if(serializer.is_valid(raise_exception=True)):
             new_data = serializer.data
+            user = User.objects.filter(username=new_data["username"]).first()
+            payload = jwt_payload_handler(user)
+            token = jwt_encode_handler(payload)
+            new_data["token"] = token
+            user_logged_in.send(sender=user.__class__,request=request, user=user)
             return Response(new_data,status = status.HTTP_200_OK)
         return Response(serializer.errors,status.HTTP_400_BAD_REQUEST)
 
